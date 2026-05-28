@@ -26,6 +26,8 @@ class MockBrokerConnector(BaseConnector):
             "BHARTIARTL": 880.0,
             "L&T": 2350.0
         }
+        # Base prices for mean reversion — prevents prices from drifting to infinity
+        self._base_prices: Dict[str, float] = dict(self.current_prices)
         self.stock_trends: Dict[str, float] = {}  # Drift factor for random walk
         self.virtual_time = datetime.datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
         self.speed_multiplier = 1.0 # default normal speed
@@ -49,12 +51,21 @@ class MockBrokerConnector(BaseConnector):
         scaled_seconds = seconds_elapsed * self.speed_multiplier
         self.virtual_time += datetime.timedelta(seconds=scaled_seconds)
 
-        # Update stock prices using a random walk with trend drift
+        # Update stock prices using a random walk with trend drift AND mean reversion
+        # Mean reversion pulls prices back toward their initial base price,
+        # preventing astronomical inflation over multi-month simulations.
+        mean_reversion_strength = 0.0005  # strength of pull toward base price per tick
         for stock in MOCK_STOCKS:
             drift = self.stock_trends[stock]
             volatility = 0.0015  # standard volatility
             change = drift + random.normalvariate(0, volatility)
-            self.current_prices[stock] = max(1.0, round(self.current_prices[stock] * (1 + change), 2))
+            
+            # Mean reversion: pull price toward base price
+            base = self._base_prices[stock]
+            current = self.current_prices[stock]
+            reversion = (base - current) / base * mean_reversion_strength
+            
+            self.current_prices[stock] = max(1.0, round(current * (1 + change + reversion), 2))
 
             # Update position pnl
             if stock in self.positions:

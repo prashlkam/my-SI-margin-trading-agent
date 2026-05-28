@@ -1,1 +1,1572 @@
-[]
+[
+    {
+        "symbol": "INFY",
+        "direction": "LONG",
+        "entry_price": 1441.31,
+        "exit_price": 2646.48,
+        "qty": 10,
+        "pnl": 12051.7,
+        "exit_reason": "Daily Profit Cap Hit",
+        "timestamp": "2026-03-02T12:52:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 425.29,
+        "exit_price": 421.23,
+        "qty": 34,
+        "pnl": -138.04000000000008,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-02T12:59:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 423.74,
+        "exit_price": 425.15,
+        "qty": 34,
+        "pnl": -47.93999999999892,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-02T13:08:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 425.4,
+        "exit_price": 422.02,
+        "qty": 34,
+        "pnl": -114.91999999999985,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T13:12:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1196.2,
+        "exit_price": 1282.7,
+        "qty": 12,
+        "pnl": 1038.0,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T14:05:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1283.57,
+        "exit_price": 1288.79,
+        "qty": 11,
+        "pnl": -57.4200000000003,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-02T14:13:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1292.36,
+        "exit_price": 1296.12,
+        "qty": 11,
+        "pnl": 41.3599999999999,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T14:40:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1297.32,
+        "exit_price": 1304.73,
+        "qty": 11,
+        "pnl": -81.5100000000009,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T14:47:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 421.7,
+        "exit_price": 361.62,
+        "qty": 34,
+        "pnl": 2042.7199999999993,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T15:09:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 361.12,
+        "exit_price": 360.84,
+        "qty": 40,
+        "pnl": -11.200000000001182,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-02T15:15:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1307.77,
+        "exit_price": 1335.06,
+        "qty": 11,
+        "pnl": 300.1899999999996,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-02T15:23:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 361.57,
+        "exit_price": 356.88,
+        "qty": 40,
+        "pnl": 187.5999999999999,
+        "exit_reason": "End-of-day Squareoff",
+        "timestamp": "2026-03-02T15:25:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1338.2,
+        "exit_price": 1331.04,
+        "qty": 10,
+        "pnl": 71.60000000000082,
+        "exit_reason": "End-of-day Squareoff",
+        "timestamp": "2026-03-02T15:25:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1338.25,
+        "exit_price": 1330.14,
+        "qty": 10,
+        "pnl": -81.099999999999,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T09:17:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1332.51,
+        "exit_price": 1346.86,
+        "qty": 10,
+        "pnl": -143.4999999999991,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T09:18:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1347.34,
+        "exit_price": 1359.36,
+        "qty": 10,
+        "pnl": 120.19999999999982,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-03T09:47:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1360.81,
+        "exit_price": 1364.27,
+        "qty": 10,
+        "pnl": -34.600000000000364,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T09:55:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 795.02,
+        "exit_price": 850.36,
+        "qty": 18,
+        "pnl": 996.1200000000006,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-03T10:17:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 843.89,
+        "exit_price": 850.15,
+        "qty": 17,
+        "pnl": -106.41999999999985,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T10:22:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1368.07,
+        "exit_price": 1392.77,
+        "qty": 10,
+        "pnl": 247.00000000000045,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-03T10:32:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1398.49,
+        "exit_price": 1399.36,
+        "qty": 10,
+        "pnl": -8.699999999998909,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T10:34:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1399.7,
+        "exit_price": 1402.89,
+        "qty": 10,
+        "pnl": 31.900000000000546,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-03T10:42:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1407.55,
+        "exit_price": 1404.96,
+        "qty": 10,
+        "pnl": 25.89999999999918,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T10:48:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1397.31,
+        "exit_price": 1394.44,
+        "qty": 10,
+        "pnl": -28.69999999999891,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-03T10:53:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 851.69,
+        "exit_price": 891.34,
+        "qty": 17,
+        "pnl": 674.0499999999996,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-03T11:09:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 858.03,
+        "exit_price": 862.34,
+        "qty": 16,
+        "pnl": -68.96000000000095,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T09:25:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1567.7,
+        "exit_price": 1574.62,
+        "qty": 9,
+        "pnl": -62.27999999999861,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T09:27:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1577.61,
+        "exit_price": 1577.92,
+        "qty": 9,
+        "pnl": 2.7900000000015552,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-04T09:59:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1575.27,
+        "exit_price": 1580.66,
+        "qty": 9,
+        "pnl": -48.5100000000009,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-04T10:14:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1579.75,
+        "exit_price": 1575.11,
+        "qty": 9,
+        "pnl": -41.7600000000009,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T10:15:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 862.15,
+        "exit_price": 906.71,
+        "qty": 16,
+        "pnl": 712.960000000001,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-04T10:51:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1572.75,
+        "exit_price": 1546.29,
+        "qty": 9,
+        "pnl": 238.14000000000033,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-04T10:52:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 907.46,
+        "exit_price": 906.19,
+        "qty": 15,
+        "pnl": 19.049999999999727,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T10:53:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1540.83,
+        "exit_price": 1534.06,
+        "qty": 9,
+        "pnl": -60.929999999999836,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T10:53:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 906.05,
+        "exit_price": 906.75,
+        "qty": 16,
+        "pnl": 11.200000000000728,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T10:56:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 907.35,
+        "exit_price": 909.8,
+        "qty": 15,
+        "pnl": -36.74999999999898,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-04T10:58:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1532.24,
+        "exit_price": 1537.9,
+        "qty": 9,
+        "pnl": -50.94000000000074,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-04T11:04:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1537.67,
+        "exit_price": 1521.47,
+        "qty": 9,
+        "pnl": -145.8000000000004,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T09:24:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 904.24,
+        "exit_price": 902.19,
+        "qty": 16,
+        "pnl": 32.79999999999927,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T09:26:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 899.85,
+        "exit_price": 901.08,
+        "qty": 16,
+        "pnl": 19.68000000000029,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T09:27:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 899.38,
+        "exit_price": 893.36,
+        "qty": 16,
+        "pnl": 96.31999999999971,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T10:01:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 894.71,
+        "exit_price": 898.08,
+        "qty": 16,
+        "pnl": 53.92000000000007,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T10:04:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 896.62,
+        "exit_price": 894.56,
+        "qty": 16,
+        "pnl": 32.960000000000946,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T10:05:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1511.42,
+        "exit_price": 1481.23,
+        "qty": 9,
+        "pnl": 271.7100000000005,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T10:06:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 894.63,
+        "exit_price": 890.61,
+        "qty": 16,
+        "pnl": -64.31999999999971,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T10:06:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1480.57,
+        "exit_price": 1475.89,
+        "qty": 9,
+        "pnl": -42.11999999999853,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T10:07:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "SHORT",
+        "entry_price": 889.59,
+        "exit_price": 894.66,
+        "qty": 16,
+        "pnl": -81.11999999999898,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-05T10:07:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1474.81,
+        "exit_price": 1493.67,
+        "qty": 9,
+        "pnl": -169.74000000000115,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T10:14:00"
+    },
+    {
+        "symbol": "ITC",
+        "direction": "LONG",
+        "entry_price": 894.05,
+        "exit_price": 895.17,
+        "qty": 16,
+        "pnl": 17.920000000000073,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-05T10:37:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1513.83,
+        "exit_price": 1515.84,
+        "qty": 9,
+        "pnl": 18.089999999999918,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T09:16:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1516.57,
+        "exit_price": 1503.62,
+        "qty": 9,
+        "pnl": 116.55000000000041,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-06T10:17:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1509.21,
+        "exit_price": 1494.25,
+        "qty": 9,
+        "pnl": -134.64000000000033,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-06T10:22:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1499.12,
+        "exit_price": 1491.34,
+        "qty": 9,
+        "pnl": 70.01999999999975,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:23:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1491.44,
+        "exit_price": 1486.96,
+        "qty": 9,
+        "pnl": -40.320000000000164,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:24:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1486.03,
+        "exit_price": 1504.64,
+        "qty": 9,
+        "pnl": -167.49000000000115,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:29:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1501.36,
+        "exit_price": 1505.43,
+        "qty": 9,
+        "pnl": 36.63000000000147,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-06T10:41:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1507.64,
+        "exit_price": 1508.87,
+        "qty": 9,
+        "pnl": -11.069999999998117,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:42:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1502.57,
+        "exit_price": 1497.89,
+        "qty": 9,
+        "pnl": -42.11999999999853,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:51:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1501.49,
+        "exit_price": 1509.81,
+        "qty": 9,
+        "pnl": -74.87999999999943,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T10:57:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1506.57,
+        "exit_price": 1501.57,
+        "qty": 9,
+        "pnl": -45.0,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-06T11:03:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1497.69,
+        "exit_price": 1486.27,
+        "qty": 9,
+        "pnl": 102.78000000000065,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-06T11:42:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 270.1,
+        "exit_price": 270.58,
+        "qty": 53,
+        "pnl": -25.43999999999795,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T09:32:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 270.54,
+        "exit_price": 267.07,
+        "qty": 53,
+        "pnl": -183.91000000000145,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-09T09:35:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "SHORT",
+        "entry_price": 4964.9,
+        "exit_price": 4932.95,
+        "qty": 2,
+        "pnl": 63.899999999999636,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T09:43:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "LONG",
+        "entry_price": 4936.96,
+        "exit_price": 4906.74,
+        "qty": 2,
+        "pnl": -60.44000000000051,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-09T09:44:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "SHORT",
+        "entry_price": 4932.75,
+        "exit_price": 4684.4,
+        "qty": 2,
+        "pnl": 496.7000000000007,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T10:34:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "LONG",
+        "entry_price": 4662.84,
+        "exit_price": 4651.15,
+        "qty": 3,
+        "pnl": -35.07000000000153,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-09T10:35:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "SHORT",
+        "entry_price": 4648.39,
+        "exit_price": 4699.47,
+        "qty": 3,
+        "pnl": -153.23999999999978,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T10:39:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "LONG",
+        "entry_price": 4694.89,
+        "exit_price": 4688.12,
+        "qty": 3,
+        "pnl": -20.31000000000131,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-09T10:41:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "SHORT",
+        "entry_price": 4664.63,
+        "exit_price": 4439.06,
+        "qty": 3,
+        "pnl": 676.7099999999991,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T11:19:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "LONG",
+        "entry_price": 4434.56,
+        "exit_price": 4440.22,
+        "qty": 3,
+        "pnl": 16.979999999999563,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-09T11:20:00"
+    },
+    {
+        "symbol": "INFY",
+        "direction": "SHORT",
+        "entry_price": 4440.33,
+        "exit_price": 4445.59,
+        "qty": 3,
+        "pnl": -15.780000000000655,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T11:38:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 268.05,
+        "exit_price": 239.37,
+        "qty": 54,
+        "pnl": 1548.7200000000003,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-09T11:59:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1223.59,
+        "exit_price": 1216.32,
+        "qty": 11,
+        "pnl": -79.9699999999998,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T09:21:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1223.02,
+        "exit_price": 1230.79,
+        "qty": 11,
+        "pnl": -85.4699999999998,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T09:22:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1228.97,
+        "exit_price": 1219.24,
+        "qty": 11,
+        "pnl": -107.0300000000002,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T09:35:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1219.39,
+        "exit_price": 1204.55,
+        "qty": 11,
+        "pnl": 163.2400000000016,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T10:04:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1203.51,
+        "exit_price": 1203.25,
+        "qty": 12,
+        "pnl": -3.119999999999891,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T10:05:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1206.14,
+        "exit_price": 1186.82,
+        "qty": 12,
+        "pnl": 231.84000000000196,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T10:41:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1189.22,
+        "exit_price": 1189.66,
+        "qty": 12,
+        "pnl": 5.280000000000655,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T10:45:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1186.2,
+        "exit_price": 1197.3,
+        "qty": 12,
+        "pnl": -133.1999999999989,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T10:52:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1190.8,
+        "exit_price": 1181.55,
+        "qty": 12,
+        "pnl": -111.0,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T10:56:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1182.56,
+        "exit_price": 1168.76,
+        "qty": 12,
+        "pnl": 165.59999999999945,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T11:30:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1165.4,
+        "exit_price": 1166.33,
+        "qty": 12,
+        "pnl": 11.159999999998035,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-10T11:31:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1166.82,
+        "exit_price": 1145.96,
+        "qty": 12,
+        "pnl": 250.3199999999988,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-10T12:13:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1397.49,
+        "exit_price": 1403.6,
+        "qty": 10,
+        "pnl": -61.099999999999,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-11T09:16:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1130.29,
+        "exit_price": 1130.42,
+        "qty": 12,
+        "pnl": -1.5600000000013097,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-11T09:16:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1402.79,
+        "exit_price": 1390.7,
+        "qty": 10,
+        "pnl": -120.89999999999918,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-11T09:19:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1389.51,
+        "exit_price": 1398.49,
+        "qty": 10,
+        "pnl": -89.80000000000018,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T09:24:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1128.92,
+        "exit_price": 1120.99,
+        "qty": 12,
+        "pnl": -95.16000000000076,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T09:27:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1401.06,
+        "exit_price": 1400.69,
+        "qty": 10,
+        "pnl": -3.6999999999989086,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T09:38:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1401.19,
+        "exit_price": 1403.88,
+        "qty": 10,
+        "pnl": -26.900000000000546,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-11T09:40:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1408.01,
+        "exit_price": 1448.4,
+        "qty": 10,
+        "pnl": 403.900000000001,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T10:33:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1447.52,
+        "exit_price": 1448.41,
+        "qty": 10,
+        "pnl": -8.900000000001,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-11T10:34:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1121.4,
+        "exit_price": 1071.66,
+        "qty": 12,
+        "pnl": 596.8800000000001,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T10:48:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1072.69,
+        "exit_price": 1070.7,
+        "qty": 13,
+        "pnl": -25.87000000000012,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T11:04:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1453.18,
+        "exit_price": 1447.9,
+        "qty": 10,
+        "pnl": -52.79999999999973,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-11T11:06:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1604.98,
+        "exit_price": 1603.34,
+        "qty": 9,
+        "pnl": -14.7600000000009,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T09:30:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1608.63,
+        "exit_price": 1609.73,
+        "qty": 9,
+        "pnl": -9.899999999999181,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T09:32:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1610.24,
+        "exit_price": 1600.82,
+        "qty": 9,
+        "pnl": -84.78000000000065,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-12T09:37:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1532.05,
+        "exit_price": 1529.37,
+        "qty": 9,
+        "pnl": 24.120000000000573,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T09:56:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1600.62,
+        "exit_price": 1545.84,
+        "qty": 9,
+        "pnl": 493.01999999999975,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-12T10:08:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1529.03,
+        "exit_price": 1517.32,
+        "qty": 9,
+        "pnl": -105.39000000000033,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T10:12:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1547.71,
+        "exit_price": 1542.59,
+        "qty": 9,
+        "pnl": -46.080000000001064,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T10:12:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1542.61,
+        "exit_price": 1550.51,
+        "qty": 9,
+        "pnl": -71.10000000000082,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T10:19:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1514.52,
+        "exit_price": 1512.41,
+        "qty": 9,
+        "pnl": 18.9899999999991,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-12T10:21:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "LONG",
+        "entry_price": 1540.32,
+        "exit_price": 1545.04,
+        "qty": 9,
+        "pnl": 42.480000000000246,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T10:21:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1508.76,
+        "exit_price": 1507.81,
+        "qty": 9,
+        "pnl": -8.55000000000041,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-12T10:22:00"
+    },
+    {
+        "symbol": "TATAMOTORS",
+        "direction": "SHORT",
+        "entry_price": 1537.43,
+        "exit_price": 1486.49,
+        "qty": 9,
+        "pnl": 458.4600000000005,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-12T11:11:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1124.0,
+        "exit_price": 1126.47,
+        "qty": 12,
+        "pnl": -29.640000000000327,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:16:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 186.33,
+        "exit_price": 185.79,
+        "qty": 78,
+        "pnl": -42.120000000001596,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:21:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1126.91,
+        "exit_price": 1114.94,
+        "qty": 12,
+        "pnl": -143.64000000000033,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:25:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1120.28,
+        "exit_price": 1122.96,
+        "qty": 13,
+        "pnl": -34.84000000000083,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:27:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 186.19,
+        "exit_price": 185.49,
+        "qty": 78,
+        "pnl": 54.59999999999911,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-13T09:31:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1122.55,
+        "exit_price": 1117.97,
+        "qty": 12,
+        "pnl": -54.95999999999913,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:31:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 185.41,
+        "exit_price": 185.34,
+        "qty": 78,
+        "pnl": -5.459999999999468,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:32:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1118.63,
+        "exit_price": 1121.12,
+        "qty": 12,
+        "pnl": -29.87999999999738,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:32:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 186.05,
+        "exit_price": 185.86,
+        "qty": 78,
+        "pnl": 14.819999999999823,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:41:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1122.13,
+        "exit_price": 1114.81,
+        "qty": 12,
+        "pnl": -87.84000000000196,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:41:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 185.93,
+        "exit_price": 184.76,
+        "qty": 78,
+        "pnl": -91.26000000000124,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T09:42:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1113.79,
+        "exit_price": 1087.82,
+        "qty": 13,
+        "pnl": 337.61000000000035,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-13T10:40:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 186.83,
+        "exit_price": 187.94,
+        "qty": 77,
+        "pnl": -85.46999999999886,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T09:17:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 188.33,
+        "exit_price": 187.62,
+        "qty": 77,
+        "pnl": -54.67000000000061,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T09:35:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 187.97,
+        "exit_price": 188.08,
+        "qty": 77,
+        "pnl": -8.47000000000105,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T09:37:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 187.83,
+        "exit_price": 213.2,
+        "qty": 77,
+        "pnl": 1953.4899999999982,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T12:12:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 213.12,
+        "exit_price": 212.78,
+        "qty": 68,
+        "pnl": 23.120000000000232,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T12:26:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 212.9,
+        "exit_price": 213.3,
+        "qty": 68,
+        "pnl": 27.200000000000387,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T12:30:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 214.03,
+        "exit_price": 213.13,
+        "qty": 67,
+        "pnl": 60.30000000000038,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T12:31:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 213.81,
+        "exit_price": 239.82,
+        "qty": 68,
+        "pnl": 1768.6799999999994,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T14:31:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 240.44,
+        "exit_price": 240.33,
+        "qty": 60,
+        "pnl": 6.599999999999113,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T14:32:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 239.25,
+        "exit_price": 236.68,
+        "qty": 60,
+        "pnl": -154.1999999999996,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T14:34:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 235.37,
+        "exit_price": 238.05,
+        "qty": 61,
+        "pnl": -163.48000000000042,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-16T14:39:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 237.82,
+        "exit_price": 237.76,
+        "qty": 60,
+        "pnl": -3.6000000000001364,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-16T14:40:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1358.02,
+        "exit_price": 1347.54,
+        "qty": 10,
+        "pnl": -104.80000000000018,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T09:21:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 247.52,
+        "exit_price": 245.89,
+        "qty": 58,
+        "pnl": -94.54000000000138,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T09:22:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1350.34,
+        "exit_price": 1356.91,
+        "qty": 10,
+        "pnl": -65.70000000000164,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T09:25:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 246.4,
+        "exit_price": 247.84,
+        "qty": 58,
+        "pnl": -83.51999999999987,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T09:31:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 248.02,
+        "exit_price": 248.59,
+        "qty": 58,
+        "pnl": 33.059999999999604,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T09:32:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 249.5,
+        "exit_price": 251.31,
+        "qty": 58,
+        "pnl": -104.98000000000013,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T09:33:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1361.73,
+        "exit_price": 1377.7,
+        "qty": 10,
+        "pnl": 159.70000000000027,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T09:56:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "SHORT",
+        "entry_price": 1384.83,
+        "exit_price": 1385.57,
+        "qty": 10,
+        "pnl": -7.400000000000091,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T09:57:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 251.49,
+        "exit_price": 254.46,
+        "qty": 57,
+        "pnl": 169.28999999999994,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T10:06:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "SHORT",
+        "entry_price": 253.67,
+        "exit_price": 254.7,
+        "qty": 56,
+        "pnl": -57.680000000000064,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-17T10:07:00"
+    },
+    {
+        "symbol": "BHARTIARTL",
+        "direction": "LONG",
+        "entry_price": 1389.4,
+        "exit_price": 1403.57,
+        "qty": 10,
+        "pnl": 141.69999999999845,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T10:28:00"
+    },
+    {
+        "symbol": "SBIN",
+        "direction": "LONG",
+        "entry_price": 255.72,
+        "exit_price": 269.88,
+        "qty": 56,
+        "pnl": 792.9599999999998,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-17T12:27:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1034.75,
+        "exit_price": 1035.19,
+        "qty": 14,
+        "pnl": 6.160000000000764,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:16:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1038.89,
+        "exit_price": 1041.06,
+        "qty": 14,
+        "pnl": -30.379999999997835,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-18T09:23:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1499.82,
+        "exit_price": 1492.12,
+        "qty": 9,
+        "pnl": -69.30000000000041,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-18T09:28:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1041.6,
+        "exit_price": 1033.04,
+        "qty": 13,
+        "pnl": -111.27999999999929,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-18T09:29:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1495.82,
+        "exit_price": 1505.16,
+        "qty": 9,
+        "pnl": -84.06000000000131,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:29:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1038.04,
+        "exit_price": 1036.4,
+        "qty": 14,
+        "pnl": 22.959999999998217,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:30:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1502.35,
+        "exit_price": 1491.18,
+        "qty": 9,
+        "pnl": -100.52999999999861,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:32:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "LONG",
+        "entry_price": 1034.09,
+        "exit_price": 1030.23,
+        "qty": 13,
+        "pnl": -50.1799999999987,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:32:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1488.17,
+        "exit_price": 1505.56,
+        "qty": 9,
+        "pnl": -156.50999999999885,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:34:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "LONG",
+        "entry_price": 1505.05,
+        "exit_price": 1496.54,
+        "qty": 9,
+        "pnl": -76.58999999999992,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:36:00"
+    },
+    {
+        "symbol": "ICICIBANK",
+        "direction": "SHORT",
+        "entry_price": 1501.65,
+        "exit_price": 1508.27,
+        "qty": 9,
+        "pnl": -59.57999999999902,
+        "exit_reason": "Trend Reversal Signal",
+        "timestamp": "2026-03-18T09:37:00"
+    },
+    {
+        "symbol": "TCS",
+        "direction": "SHORT",
+        "entry_price": 1032.21,
+        "exit_price": 1039.56,
+        "qty": 14,
+        "pnl": -102.89999999999873,
+        "exit_reason": "Trailing Stop Loss",
+        "timestamp": "2026-03-18T09:40:00"
+    }
+]

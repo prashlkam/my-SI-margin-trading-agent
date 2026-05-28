@@ -120,7 +120,8 @@ class RiskManager:
             entry_price = self.peak_prices[symbol]
             tp_price = entry_price * (1.0 + tp_target)
             if current_price >= tp_price:
-                logger.info(f"Take profit triggered for LONG {symbol}! Gain: {((current_price - entry_price) / entry_price)*100:.2f}% (Target: {tp_target*100:.1f}%, Price: {current_price})")
+                gain_pct = ((current_price - entry_price) / max(entry_price, 1.0)) * 100.0  # prevent division by zero
+                logger.info(f"Take profit triggered for LONG {symbol}! Gain: {gain_pct:.2f}% (Target: {tp_target*100:.1f}%, Price: {current_price})")
                 return "TP"
 
         elif direction == "SHORT":
@@ -141,7 +142,7 @@ class RiskManager:
             entry_price = peak
             tp_price = entry_price * (1.0 - tp_target)
             if current_price <= tp_price:
-                profit_pct = (entry_price - current_price) / entry_price
+                profit_pct = (entry_price - current_price) / max(entry_price, 1.0)  # prevent division by zero
                 logger.info(f"Take profit triggered for SHORT {symbol}! Gain: {profit_pct*100:.2f}% (Target: {tp_target*100:.1f}%, Price: {current_price})")
                 return "TP"
 

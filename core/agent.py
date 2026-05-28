@@ -137,7 +137,8 @@ class MarginTradingAgent:
                     # Score price action: volatility + direction (absolute price change slope)
                     closes = [float(c["close"]) for c in candles[-5:]]
                     volatility = max(closes) - min(closes)
-                    trend = (closes[-1] - closes[0]) / closes[0]
+                    base_price = closes[0] if closes[0] != 0 else 1.0  # prevent division by zero
+                    trend = (closes[-1] - closes[0]) / base_price
                     # Score is volatility scaled by positive or negative strength
                     score = abs(trend) * volatility
                     scores.append((symbol, score, candles))
@@ -297,7 +298,8 @@ class MarginTradingAgent:
                 if isinstance(closes[0], str):
                     closes = [float(c) for c in closes]
                 avg = sum(closes) / len(closes)
-                variances = [abs(c - avg) / avg for c in closes]
+                mean_price = avg if avg != 0 else 1.0  # prevent division by zero
+                variances = [abs(c - mean_price) / mean_price for c in closes]
                 vol = sum(variances) / len(variances) * 100.0  # as percentage
             self.risk_manager.register_position_open(symbol, direction, price, volatility_pct=vol)
             self.log(f"Opened {direction} position: {qty} shares of {symbol} at Rs. {price}", "IMPORTANT")

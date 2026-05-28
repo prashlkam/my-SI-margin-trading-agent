@@ -90,11 +90,13 @@ class TradingStrategy:
         rsi_signal = 0.0
         if curr_rsi < self.params["rsi_oversold"]:
             # oversold, bullish signal strength scales with how deep it is oversold
-            rsi_signal = (self.params["rsi_oversold"] - curr_rsi) / self.params["rsi_oversold"]
+            oversold = max(self.params["rsi_oversold"], 1.0)  # prevent division by zero
+            rsi_signal = (oversold - curr_rsi) / oversold
             rsi_signal = min(1.0, rsi_signal * 2) # boost
         elif curr_rsi > self.params["rsi_overbought"]:
             # overbought, bearish signal
-            rsi_signal = -(curr_rsi - self.params["rsi_overbought"]) / (100 - self.params["rsi_overbought"])
+            overbought_range = max(100.0 - self.params["rsi_overbought"], 1.0)  # prevent division by zero
+            rsi_signal = -(curr_rsi - self.params["rsi_overbought"]) / overbought_range
             rsi_signal = max(-1.0, rsi_signal * 2)
         else:
             # RSI momentum: bullish if rsi > 50, bearish if rsi < 50
@@ -107,7 +109,8 @@ class TradingStrategy:
         # 4. Price Action (Recent trend)
         # Check slope of last 5 candles
         last_5_closes = df["close"].tail(5).tolist()
-        price_action_slope = (last_5_closes[-1] - last_5_closes[0]) / last_5_closes[0]
+        base_price = last_5_closes[0] if last_5_closes[0] != 0 else 1.0  # prevent division by zero
+        price_action_slope = (last_5_closes[-1] - last_5_closes[0]) / base_price
         price_action_signal = np.clip(price_action_slope * 100, -1.0, 1.0) # scaled
 
         # Combine signals using weights

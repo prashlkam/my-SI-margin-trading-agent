@@ -1086,6 +1086,29 @@
         // Initialize lucide icons
         lucide.createIcons();
 
+        // Safe currency formatter: converts any value to Indian Rupee format with 2 decimal places.
+        // Handles scientific notation, NaN, Infinity, and non-numeric edge cases gracefully.
+        function formatCurrency(value) {
+            if (value === null || value === undefined || value === '') return 'Rs. 0.00';
+            const num = Number(value);
+            if (!isFinite(num) || isNaN(num)) return 'Rs. 0.00';
+            // Use Indian locale for comma-separated currency format (e.g., Rs. 12,34,567.89)
+            return 'Rs. ' + num.toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        // Safe percentage formatter
+        function formatPercent(value, digits) {
+            if (value === null || value === undefined || value === '') return '0.00%';
+            const num = Number(value);
+            if (!isFinite(num) || isNaN(num)) return '0.00%';
+            const d = digits !== undefined ? digits : 2;
+            const sign = num >= 0 ? '+' : '';
+            return sign + num.toFixed(d) + '%';
+        }
+
         // Initialize default backtesting date pickers (7 days ago to yesterday)
         const today = new Date();
         const yesterday = new Date(today);
@@ -1202,22 +1225,23 @@
 
             // Update PnL
             const pnlVal = document.getElementById('metric-pnl');
-            pnlVal.textContent = `Rs. ${state.total_pnl.toFixed(2)}`;
-            if (state.total_pnl >= 0) {
+            pnlVal.textContent = formatCurrency(state.total_pnl);
+            if (Number(state.total_pnl) >= 0) {
                 pnlVal.className = 'metric-value profit-text';
             } else {
                 pnlVal.className = 'metric-value loss-text';
             }
-            document.getElementById('metric-pnl-sub').textContent = `Realised: Rs. ${state.realized_pnl.toFixed(2)}`;
+            document.getElementById('metric-pnl-sub').textContent = 'Realised: ' + formatCurrency(state.realized_pnl);
 
             // Update Exposure
-            document.getElementById('metric-exposure').textContent = `Rs. ${state.exposure.toFixed(2)}`;
+            document.getElementById('metric-exposure').textContent = formatCurrency(state.exposure);
             const exposureBar = document.getElementById('exposure-bar');
-            const expPct = Math.min(100, (state.exposure / state.max_exposure) * 100);
+            const expPct = Math.min(100, (Number(state.exposure) / Number(state.max_exposure)) * 100);
             exposureBar.style.width = `${expPct}%`;
 
             // Update Win Rate
-            document.getElementById('metric-win-rate').textContent = `${metrics.win_rate.toFixed(1)}%`;
+            var winRateVal = Number(metrics.win_rate);
+            document.getElementById('metric-win-rate').textContent = (isFinite(winRateVal) ? winRateVal.toFixed(1) : '0.0') + '%';
             const wins = trades.filter(t => t.pnl > 0).length;
             const losses = trades.length - wins;
             document.getElementById('metric-win-rate-sub').textContent = `Wins: ${wins} | Losses: ${losses}`;
@@ -1243,12 +1267,11 @@
             state.watchlist_movers.forEach(m => {
                 const item = document.createElement('div');
                 item.className = 'watchlist-item';
-                const trendClass = m.change_percent >= 0 ? 'profit-text' : 'loss-text';
-                const trendSign = m.change_percent >= 0 ? '+' : '';
+                const trendClass = Number(m.change_percent) >= 0 ? 'profit-text' : 'loss-text';
                 item.innerHTML = `
                     <span class="stock-badge">${m.symbol}</span>
-                    <span style="font-weight: 500;">Rs. ${m.price.toFixed(2)}</span>
-                    <span class="${trendClass}" style="font-weight: 600;">${trendSign}${m.change_percent.toFixed(2)}%</span>
+                    <span style="font-weight: 500;">${formatCurrency(m.price)}</span>
+                    <span class="${trendClass}" style="font-weight: 600;">${formatPercent(m.change_percent)}</span>
                 `;
                 moversList.appendChild(item);
             });
@@ -1279,16 +1302,16 @@
                 document.getElementById('no-positions').style.display = 'none';
                 state.positions.forEach(p => {
                     const tr = document.createElement('tr');
-                    const dir = p.qty > 0 ? 'LONG' : 'SHORT';
-                    const dirClass = p.qty > 0 ? 'direction-badge direction-long' : 'direction-badge direction-short';
-                    const pnlClass = p.pnl >= 0 ? 'profit-text' : 'loss-text';
+                    const dir = Number(p.qty) > 0 ? 'LONG' : 'SHORT';
+                    const dirClass = Number(p.qty) > 0 ? 'direction-badge direction-long' : 'direction-badge direction-short';
+                    const pnlClass = Number(p.pnl) >= 0 ? 'profit-text' : 'loss-text';
                     tr.innerHTML = `
                         <td><span class="stock-badge">${p.symbol}</span></td>
                         <td><span class="${dirClass}">${dir}</span></td>
-                        <td style="font-weight: 500;">${Math.abs(p.qty)}</td>
-                        <td>Rs. ${p.avg_price.toFixed(2)}</td>
-                        <td>Rs. ${p.current_price.toFixed(2)}</td>
-                        <td class="${pnlClass}" style="font-weight: 600;">Rs. ${p.pnl.toFixed(2)}</td>
+                        <td style="font-weight: 500;">${Math.abs(Number(p.qty))}</td>
+                        <td>${formatCurrency(p.avg_price)}</td>
+                        <td>${formatCurrency(p.current_price)}</td>
+                        <td class="${pnlClass}" style="font-weight: 600;">${formatCurrency(p.pnl)}</td>
                     `;
                     posBody.appendChild(tr);
                 });
@@ -1317,15 +1340,14 @@
                     }
                     
                     const dirClass = t.direction === 'LONG' ? 'direction-badge direction-long' : 'direction-badge direction-short';
-                    const pnlClass = t.pnl >= 0 ? 'profit-text' : 'loss-text';
-                    const pnlSign = t.pnl >= 0 ? '+' : '';
+                    const pnlClass = Number(t.pnl) >= 0 ? 'profit-text' : 'loss-text';
                     tr.innerHTML = `
                         <td>${displayTime}</td>
                         <td><span class="stock-badge">${t.symbol}</span></td>
                         <td><span class="${dirClass}">${t.direction}</span></td>
-                        <td>${t.entry_price.toFixed(2)}</td>
-                        <td>${t.exit_price.toFixed(2)}</td>
-                        <td class="${pnlClass}" style="font-weight: 600;">${pnlSign}${t.pnl.toFixed(2)}</td>
+                        <td>${formatCurrency(t.entry_price)}</td>
+                        <td>${formatCurrency(t.exit_price)}</td>
+                        <td class="${pnlClass}" style="font-weight: 600;">${formatCurrency(t.pnl)}</td>
                         <td style="font-size: 12px; color: var(--color-text-secondary);">${t.exit_reason}</td>
                     `;
                     tradesBody.appendChild(tr);
@@ -1367,6 +1389,10 @@
                 box.className = 'param-box';
                 let label = k.replace("_", " ").toUpperCase();
                 let val = state.strategy_params[k];
+                // Format numeric values cleanly (up to 4 decimal places)
+                if (typeof val === 'number') {
+                    val = val.toFixed(4).replace(/\.?0+$/, '');
+                }
                 box.innerHTML = `
                     <span class="param-label">${label}</span>
                     <span class="param-value">${val}</span>

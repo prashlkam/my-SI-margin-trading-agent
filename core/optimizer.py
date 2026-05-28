@@ -126,6 +126,7 @@ class StrategyOptimizer:
         w_rsi = max(0.1, base_params["weight_rsi"] + random.uniform(-0.1, 0.1))
         w_macd = max(0.1, base_params["weight_macd"] + random.uniform(-0.1, 0.1))
         total_w = w_ema + w_rsi + w_macd
+        total_w = total_w if total_w > 0 else 1.0  # prevent division by zero
         candidate["weight_ema"] = round(w_ema / total_w, 2)
         candidate["weight_rsi"] = round(w_rsi / total_w, 2)
         candidate["weight_macd"] = round(w_macd / total_w, 2)

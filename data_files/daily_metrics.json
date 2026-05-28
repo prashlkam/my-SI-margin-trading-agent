@@ -1,1 +1,7 @@
-{"win_rate": 0.0, "total_pnl": 0.0, "total_trades": 0, "sharpe_ratio": 0.0, "max_drawdown": 0.0}
+{
+    "win_rate": 40.76,
+    "total_pnl": 24488.92,
+    "total_trades": 157,
+    "sharpe_ratio": 2.44,
+    "max_drawdown": 818.35
+}
