@@ -161,7 +161,7 @@ class StrategyOptimizer:
                     if curr_price > peak_price:
                         peak_price = curr_price
                     sl = peak_price * 0.99
-                    tp = entry_price * 1.07
+                    tp = entry_price * 1.08
                     
                     if curr_price <= sl:
                         pnl = (sl - entry_price) * qty
@@ -176,7 +176,7 @@ class StrategyOptimizer:
                     if curr_price < peak_price:
                         peak_price = curr_price
                     sl = peak_price * 1.01
-                    tp = entry_price * 0.93
+                    tp = entry_price * 0.92
                     
                     if curr_price >= sl:
                         pnl = (entry_price - sl) * qty

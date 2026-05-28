@@ -26,7 +26,9 @@ app = FastAPI(title="PLK SI Magin Trading Agent API Dashboard")
 
 # Paths and storage directories
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR = os.path.join(BASE_DIR, "data_files")
+# Azure App Service: use DATA_DIR env var if set (points to persistent /home/site/data),
+# otherwise fall back to local data_files/ directory
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data_files"))
 os.makedirs(DATA_DIR, exist_ok=True)
 
 # Shared objects
@@ -125,7 +127,20 @@ async def trading_agent_loop():
 async def startup_event():
     # Start background loop
     asyncio.create_task(trading_agent_loop())
-    logger.info("Trading agent background worker started.")
+    logger.info(f"Trading agent background worker started. Data directory: {DATA_DIR}")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """Graceful shutdown: flush storage buffers and log final state."""
+    logger.info("Shutdown signal received. Flushing data buffers...")
+    try:
+        if hasattr(storage, 'buffer') and storage.buffer:
+            storage.flush_buffer()
+        if hasattr(agent, 'update_summary_metrics'):
+            agent.update_summary_metrics()
+    except Exception as e:
+        logger.error(f"Error during shutdown flush: {e}")
+    logger.info("Application shutdown complete.")
 
 # Request models
 class BrokerSelectModel(BaseModel):

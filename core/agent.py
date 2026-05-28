@@ -171,7 +171,7 @@ class MarginTradingAgent:
         self.market_closed = False
 
     def run_live_trading(self, current_time: datetime.datetime):
-        # 1. First, check daily profit cap limit (Rs. 3000)
+        # 1. First, check daily profit cap limit (Rs. 12,000)
         positions = self.broker.get_positions()
         unrealized_pnl = sum([pos["pnl"] for pos in positions])
         
@@ -290,7 +290,16 @@ class MarginTradingAgent:
         order_type = "BUY" if direction == "LONG" else "SELL"
         try:
             self.broker.place_order(symbol, order_type, qty, "MARKET")
-            self.risk_manager.register_position_open(symbol, direction, price)
+            # Calculate recent volatility from daily price data for dynamic TP scaling
+            vol = 0.0
+            if symbol in self.daily_price_data and len(self.daily_price_data[symbol]) >= 5:
+                closes = [c["close"] for c in self.daily_price_data[symbol][-5:]]
+                if isinstance(closes[0], str):
+                    closes = [float(c) for c in closes]
+                avg = sum(closes) / len(closes)
+                variances = [abs(c - avg) / avg for c in closes]
+                vol = sum(variances) / len(variances) * 100.0  # as percentage
+            self.risk_manager.register_position_open(symbol, direction, price, volatility_pct=vol)
             self.log(f"Opened {direction} position: {qty} shares of {symbol} at Rs. {price}", "IMPORTANT")
         except Exception as e:
             self.log(f"Failed to place entry order for {symbol}: {e}", "ERROR")
