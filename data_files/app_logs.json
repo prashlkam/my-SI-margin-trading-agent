@@ -1,0 +1,547 @@
+[
+    {
+        "timestamp": "2026-05-26 20:35:41",
+        "level": "INFO",
+        "message": "Margin Trading Agent Initialised in Standby Mode."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:41",
+        "level": "INFO",
+        "message": "Simulation reset. Virtual time started at 9:00 AM."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Running Pre-Market scan (9:05 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Pre-Market Watchlist created. News stocks: ['HDFCBANK', 'INFY', 'ITC', 'ICICIBANK', 'RELIANCE']"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Top Movers: ['SBIN (3.88%)', 'L&T (2.87%)', 'TCS (-2.31%)', 'BHARTIARTL (-1.35%)', 'TATAMOTORS (0.68%)']"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and INFY"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:42",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:43",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=10, slow=18, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:44",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:44",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: SBIN and ICICIBANK"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:44",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:44",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:44",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:46",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=11, slow=18, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:47",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:47",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: SBIN and TATAMOTORS"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:47",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:47",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:47",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:49",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=11, slow=18, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:50",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:50",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: BHARTIARTL and ITC"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:50",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:50",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:50",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:52",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=27, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:53",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:53",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: BHARTIARTL and HDFCBANK"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:53",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:53",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:53",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:55",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=30, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:56",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:56",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: SBIN and ITC"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:56",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:56",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:56",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:58",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=30, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:58",
+        "level": "INFO",
+        "message": "Simulation time speed multiplier set to 300.0x."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:59",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:59",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and SBIN"
+    },
+    {
+        "timestamp": "2026-05-26 20:35:59",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:59",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:35:59",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:01",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=35, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Simulation time speed multiplier set to 300.0x."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and L&T"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:02",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:04",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=35, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:05",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:05",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and L&T"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:05",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:05",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:05",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:08",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=35, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:09",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:09",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and INFY"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:09",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:09",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:09",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:11",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=35, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:12",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:12",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: SBIN and HDFCBANK"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:12",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:12",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:12",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:15",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=15, slow=35, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:16",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:16",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ITC and SBIN"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:16",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:16",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:16",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:19",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=13, slow=29, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:20",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:20",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: TATAMOTORS and SBIN"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:20",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:20",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:20",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:22",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=12, slow=25, entry_threshold=0.45"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:23",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:23",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: ICICIBANK and HDFCBANK"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:23",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:23",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:23",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:25",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=5, slow=23, entry_threshold=0.45"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:26",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:26",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: TATAMOTORS and SBIN"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:26",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:26",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:26",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:28",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=5, slow=23, entry_threshold=0.45"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:29",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:29",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: TATAMOTORS and ITC"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:29",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:29",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:29",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:32",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=7, slow=18, entry_threshold=0.4"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:33",
+        "level": "INFO",
+        "message": "Market Open! Selecting top 2 stocks for day trading based on price action (9:15 AM)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:33",
+        "level": "INFO",
+        "message": "Selected Top 2 Stocks for the day: SBIN and RELIANCE"
+    },
+    {
+        "timestamp": "2026-05-26 20:36:33",
+        "level": "INFO",
+        "message": "Closing open positions for daily square-off (3:25 PM / Target profit cap hit)..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:33",
+        "level": "INFO",
+        "message": "Daily trade operations completed. Positions squared off."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:33",
+        "level": "INFO",
+        "message": "Running self-improvement engine: Optimising parameters for next session..."
+    },
+    {
+        "timestamp": "2026-05-26 20:36:35",
+        "level": "INFO",
+        "message": "Self-improvement complete. Best params for next run: EMA fast=8, slow=18, entry_threshold=0.4"
+    }
+]

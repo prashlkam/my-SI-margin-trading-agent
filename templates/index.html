@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLK SI Magin Trading Agent - Dashboard</title>
+    <!-- Google Fonts: Outfit for headers, Inter for copy -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for beautiful analytics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons for premium iconography -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-base: #0B0E14;
+            --bg-canvas: #0F131E;
+            --glass-bg: rgba(22, 28, 45, 0.45);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-hover: rgba(255, 255, 255, 0.03);
+            --color-text-primary: #F3F4F6;
+            --color-text-secondary: #9CA3AF;
+            --color-accent-primary: #8B5CF6; /* Violet */
+            --color-accent-secondary: #06B6D4; /* Cyan */
+            --color-profit: #10B981; /* Emerald */
+            --color-loss: #EF4444; /* Rose */
+            --color-warning: #F59E0B; /* Amber */
+            --glow-profit: 0 0 20px rgba(16, 185, 129, 0.25);
+            --glow-loss: 0 0 20px rgba(239, 68, 68, 0.25);
+            --glow-accent: 0 0 20px rgba(139, 92, 246, 0.25);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, rgba(6, 182, 212, 0.08) 0%, transparent 40%);
+            background-attachment: fixed;
+        }
+
+        h1, h2, h3, h4 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+
+        /* Glassmorphism Card Style */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .glass-card:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            box-shadow: 0 12px 40px 0 rgba(0, 0, 0, 0.5);
+        }
+
+        /* Navigation / Header */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 40px;
+            background: rgba(15, 19, 30, 0.6);
+            backdrop-filter: blur(8px);
+            border-bottom: 1px solid var(--glass-border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            color: var(--color-accent-primary);
+            filter: drop-shadow(var(--glow-accent));
+        }
+
+        .logo-text h1 {
+            font-size: 22px;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, var(--color-text-primary) 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .logo-text span {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            display: block;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .sim-time-badge {
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.2);
+            color: var(--color-accent-secondary);
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-family: monospace;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+        }
+
+        .btn {
+            background: var(--color-accent-primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.1);
+            box-shadow: var(--glow-accent);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--glass-border);
+            color: var(--color-text-primary);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: none;
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: var(--color-loss);
+        }
+        .btn-danger:hover {
+            box-shadow: var(--glow-loss);
+        }
+
+        /* Container Layout */
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 30px 40px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+        }
+
+        /* Span Helpers */
+        .col-span-1 { grid-column: span 1; }
+        .col-span-2 { grid-column: span 2; }
+        .col-span-3 { grid-column: span 3; }
+        .col-span-4 { grid-column: span 4; }
+
+        /* KPI Metric Cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+            width: 100%;
+        }
+
+        .metric-card {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .metric-title {
+            color: var(--color-text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .metric-value {
+            font-family: 'Outfit', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .metric-subtext {
+            font-size: 12px;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* Custom Colors for metrics */
+        .profit-text { color: var(--color-profit); text-shadow: var(--glow-profit); }
+        .loss-text { color: var(--color-loss); text-shadow: var(--glow-loss); }
+        .accent-text { color: var(--color-accent-secondary); }
+
+        /* Watchlists / News & Movers */
+        .watchlist-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .watchlist-list {
+            margin-top: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .watchlist-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.2s ease;
+        }
+
+        .watchlist-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateX(4px);
+        }
+
+        .stock-badge {
+            font-weight: 700;
+            color: var(--color-text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .sentiment-tag {
+            font-size: 11px;
+            padding: 3px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+        .sentiment-positive { background: rgba(16, 185, 129, 0.15); color: var(--color-profit); }
+        .sentiment-negative { background: rgba(239, 68, 68, 0.15); color: var(--color-loss); }
+
+        /* Chart card */
+        .chart-card {
+            height: 380px;
+            position: relative;
+        }
+
+        /* Active Positions Table */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            margin-top: 15px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            color: var(--color-text-secondary);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        td {
+            padding: 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-size: 14px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .direction-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 700;
+            display: inline-block;
+        }
+        .direction-long { background: rgba(16, 185, 129, 0.15); color: var(--color-profit); }
+        .direction-short { background: rgba(239, 68, 68, 0.15); color: var(--color-loss); }
+
+        /* Live console / logs */
+        .console-log {
+            background: rgba(5, 7, 10, 0.8);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 16px;
+            height: 250px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .console-line {
+            display: flex;
+            gap: 12px;
+            line-height: 1.5;
+        }
+
+        .console-time {
+            color: var(--color-accent-secondary);
+            min-width: 60px;
+        }
+
+        .console-level {
+            font-weight: bold;
+            min-width: 50px;
+        }
+        .level-info { color: #60A5FA; }
+        .level-warning { color: var(--color-warning); }
+        .level-error { color: var(--color-loss); }
+        .level-important { color: #A78BFA; }
+
+        /* Parameter Optimisation Widget */
+        .params-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .param-box {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            padding: 12px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .param-label {
+            color: var(--color-text-secondary);
+            font-size: 12px;
+        }
+
+        .param-value {
+            font-weight: 600;
+            color: var(--color-accent-secondary);
+            font-family: monospace;
+        }
+
+        /* Config forms */
+        .config-form {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            margin-top: 15px;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .input-group label {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+        }
+
+        .input-group input, .input-group select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            color: var(--color-text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s;
+            font-size: 14px;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            border-color: var(--color-accent-primary);
+        }
+
+        /* Speed slider */
+        .speed-slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid var(--glass-border);
+            padding: 8px 16px;
+            border-radius: 30px;
+        }
+
+        .speed-label {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--color-text-secondary);
+        }
+
+        /* Scrollbar decoration */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255,255,255,0.1);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        /* Risk Limit Indicator Bar */
+        .progress-bar-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            height: 6px;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-accent-secondary), var(--color-accent-primary));
+            transition: width 0.4s ease;
+        }
+        
+        .progress-val {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            margin-top: 4px;
+            display: block;
+            text-align: right;
+        }
+
+        /* ================= AUTHENTICATION OVERLAY ================= */
+        #login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            z-index: 1000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+        }
+
+        #login-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .auth-card {
+            width: 420px;
+            padding: 40px;
+            border-radius: 24px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+        }
+
+        .auth-logo {
+            font-size: 26px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            margin-bottom: 24px;
+            background: linear-gradient(135deg, var(--color-text-primary) 0%, #A78BFA 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--glass-border);
+            margin-bottom: 24px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 12px;
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .auth-tab.active {
+            color: var(--color-text-primary);
+            border-bottom: 2px solid var(--color-accent-primary);
+            font-weight: 600;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            text-align: left;
+        }
+
+        .auth-btn {
+            background: linear-gradient(135deg, var(--color-accent-primary), var(--color-accent-secondary));
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--glow-accent);
+        }
+
+        .auth-switch {
+            font-size: 13px;
+            color: var(--color-text-secondary);
+            margin-top: 16px;
+            cursor: pointer;
+        }
+        
+        .auth-switch span {
+            color: var(--color-accent-primary);
+            font-weight: 500;
+        }
+
+        /* ================= BACKTEST MODAL ================= */
+        #backtest-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(11, 14, 20, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+        
+        #backtest-modal.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .backtest-modal-card {
+            width: 480px;
+            padding: 32px;
+            text-align: center;
+            border-radius: 20px;
+            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
+        }
+
+        .progress-bar-large {
+            width: 100%;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 24px 0 12px 0;
+            border: 1px solid var(--glass-border);
+        }
+
+        .progress-bar-large-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, var(--color-accent-secondary), var(--color-accent-primary));
+            transition: width 0.3s ease;
+            box-shadow: var(--glow-accent);
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Login/Register Overlay -->
+    <div id="login-overlay">
+        <div class="auth-card glass-card">
+            <div class="auth-logo">
+                <i data-lucide="trending-up" style="color: var(--color-accent-primary); width: 32px; height: 32px; filter: drop-shadow(var(--glow-accent));"></i>
+                <span>PLK SI MAGIN</span>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</button>
+                <button class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form" onsubmit="handleAuth(event, 'login')">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="login-username" required placeholder="Enter username">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="login-password" required placeholder="Enter password">
+                </div>
+                <button type="submit" class="auth-btn">Sign In</button>
+            </form>
+            
+            <!-- Register Form -->
+            <form id="register-form" class="auth-form" onsubmit="handleAuth(event, 'register')" style="display: none;">
+                <div class="input-group">
+                    <label>Username</label>
+                    <input type="text" id="register-username" required placeholder="Create username">
+                </div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="register-password" required placeholder="Create password (min 6 chars)">
+                </div>
+                <button type="submit" class="auth-btn">Create Account</button>
+            </form>
+            
+            <div class="auth-switch" id="auth-switch-text" onclick="toggleAuthMode()">
+                Don't have an account? <span>Register here</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Backtest Progress Modal -->
+    <div id="backtest-modal">
+        <div class="backtest-modal-card glass-card">
+            <h3 style="font-size: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
+                <i data-lucide="loader" class="logo-icon" style="animation: spin 2s linear infinite;"></i>
+                Simulating Historical Trades
+            </h3>
+            <p id="backtest-modal-range" style="font-size: 13px; color: var(--color-text-secondary);"></p>
+            
+            <div class="progress-bar-large">
+                <div class="progress-bar-large-fill" id="backtest-progress-fill"></div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px;">
+                <span id="backtest-modal-date">Simulating...</span>
+                <span id="backtest-modal-percent">0%</span>
+            </div>
+            
+            <p id="backtest-modal-msg" style="font-size: 14px; font-weight: 500; color: var(--color-accent-secondary);"></p>
+        </div>
+    </div>
+
+    <!-- Header / Navigation -->
+    <header>
+        <div class="logo-container">
+            <i data-lucide="trending-up" class="logo-icon" style="width: 32px; height: 32px;"></i>
+            <div class="logo-text">
+                <h1>PLK SI MAGIN</h1>
+                <span>Trading Agent</span>
+            </div>
+        </div>
+
+        <div class="header-controls">
+            <!-- Simulated time badge -->
+            <div class="sim-time-badge">
+                <i data-lucide="clock" style="width: 16px; height: 16px;"></i>
+                <span id="sim-time">09:00:00</span>
+            </div>
+
+            <!-- Speed multiplier buttons -->
+            <div class="speed-slider-container">
+                <span class="speed-label">Speed</span>
+                <button class="btn btn-secondary" onclick="setSpeed(1)" style="padding: 4px 8px; font-size: 11px;">1x</button>
+                <button class="btn btn-secondary" onclick="setSpeed(10)" style="padding: 4px 8px; font-size: 11px;">10x</button>
+                <button class="btn btn-secondary" onclick="setSpeed(60)" style="padding: 4px 8px; font-size: 11px;">60x</button>
+                <button class="btn btn-secondary" onclick="setSpeed(300)" style="padding: 4px 8px; font-size: 11px;">300x</button>
+            </div>
+
+            <button class="btn" id="play-pause-btn" onclick="toggleRun()">
+                <i data-lucide="pause" id="play-pause-icon" style="width: 16px; height: 16px;"></i>
+                <span id="play-pause-text">Pause</span>
+            </button>
+
+            <button class="btn btn-secondary" onclick="resetSimulation()" title="Reset Clock & Backtest">
+                <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
+                Reset
+            </button>
+
+            <!-- User Profile & Logout -->
+            <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--glass-border); padding-left: 16px;">
+                <i data-lucide="user" style="width: 16px; height: 16px; color: var(--color-text-secondary);"></i>
+                <span id="header-username" style="font-size: 13px; font-weight: 600; color: var(--color-text-secondary);">Guest</span>
+                <button class="btn btn-secondary" onclick="logout()" style="padding: 6px 12px; font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                    <i data-lucide="log-out" style="width: 12px; height: 12px;"></i>
+                    Logout
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Main View Grid -->
+    <div class="dashboard-container">
+        
+        <!-- Row 1: KPI Metrics -->
+        <div class="col-span-4">
+            <div class="metrics-grid">
+                
+                <!-- Net PNL -->
+                <div class="glass-card metric-card">
+                    <div class="metric-title">
+                        <i data-lucide="wallet" style="width: 14px; height: 14px;"></i>
+                        Net Profit / Loss
+                    </div>
+                    <div class="metric-value" id="metric-pnl">Rs. 0.00</div>
+                    <div class="metric-subtext" id="metric-pnl-sub">
+                        Realised: Rs. 0.00
+                    </div>
+                </div>
+
+                <!-- Active Exposure -->
+                <div class="glass-card metric-card">
+                    <div class="metric-title">
+                        <i data-lucide="activity" style="width: 14px; height: 14px;"></i>
+                        Active Exposure
+                    </div>
+                    <div class="metric-value" id="metric-exposure">Rs. 0.00</div>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="exposure-bar" style="width: 0%"></div>
+                    </div>
+                    <span class="progress-val" id="exposure-val">Limit: Rs. 30,000</span>
+                </div>
+
+                <!-- Win Rate -->
+                <div class="glass-card metric-card">
+                    <div class="metric-title">
+                        <i data-lucide="trending-up" style="width: 14px; height: 14px;"></i>
+                        Win Rate
+                    </div>
+                    <div class="metric-value accent-text" id="metric-win-rate">0.0%</div>
+                    <div class="metric-subtext" id="metric-win-rate-sub">
+                        Wins: 0 | Losses: 0
+                    </div>
+                </div>
+
+                <!-- Daily Trade Count -->
+                <div class="glass-card metric-card">
+                    <div class="metric-title">
+                        <i data-lucide="hash" style="width: 14px; height: 14px;"></i>
+                        Trades Completed
+                    </div>
+                    <div class="metric-value" id="metric-trades">0 / 12</div>
+                    <div class="metric-subtext" style="color: var(--color-text-secondary)">
+                        Limit: &lt; 12 per day
+                    </div>
+                </div>
+
+                <!-- Active Broker connection -->
+                <div class="glass-card metric-card">
+                    <div class="metric-title">
+                        <i data-lucide="shield" style="width: 14px; height: 14px;"></i>
+                        Active Connector
+                    </div>
+                    <div class="metric-value accent-text" id="metric-broker" style="font-size: 20px; padding-top: 6px;">Mock Simulator</div>
+                    <div class="metric-subtext" id="broker-status-badge" style="color: var(--color-profit);">
+                        <i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> Active Simulation
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Column 1: Watchlists & Positions -->
+        <div class="col-span-2 flex flex-col gap-24" style="display: flex; flex-direction: column; gap: 24px;">
+            
+            <!-- Watchlist news and movers -->
+            <div class="glass-card">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="search" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
+                    Pre-Market Watchlist Scan
+                </h3>
+                
+                <div class="watchlist-container">
+                    <div>
+                        <h4 style="font-size: 13px; color: var(--color-text-secondary); margin-top: 16px; text-transform: uppercase;">Top Market Movers</h4>
+                        <div class="watchlist-list" id="movers-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                    <div>
+                        <h4 style="font-size: 13px; color: var(--color-text-secondary); margin-top: 16px; text-transform: uppercase;">High Impact News Feed</h4>
+                        <div class="watchlist-list" id="news-list">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Positions Widget -->
+            <div class="glass-card">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="briefcase" style="color: var(--color-accent-primary); width: 20px; height: 20px;"></i>
+                    Active Positions
+                </h3>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Symbol</th>
+                                <th>Direction</th>
+                                <th>Qty</th>
+                                <th>Avg Price</th>
+                                <th>Current Price</th>
+                                <th>Unrealised PnL</th>
+                            </tr>
+                        </thead>
+                        <tbody id="positions-table-body">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="no-positions" style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 14px;">
+                        No active positions currently. Scanning for entry conditions...
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Column 2: Chart & Configs -->
+        <div class="col-span-2" style="display: flex; flex-direction: column; gap: 24px;">
+            <!-- Equity Chart Card -->
+            <div class="glass-card chart-card">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <i data-lucide="area-chart" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
+                    Equity Curve & Profit Progress
+                </h3>
+                <div style="height: 300px; width: 100%;">
+                    <canvas id="equityChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 3: Self-Improvement, Pluggable Connectors, Historical Backtesting -->
+        <!-- Column 3: Self Improving / Optimization Parameters -->
+        <div class="col-span-1">
+            <div class="glass-card" style="height: 100%;">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <i data-lucide="brain" style="color: var(--color-accent-primary); width: 20px; height: 20px;"></i>
+                    Self-Improvement
+                </h3>
+                <p style="font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px;">
+                    Agent parameters automatically optimize at the end of each session based on price action and trade logs.
+                </p>
+
+                <h4 style="font-size: 13px; text-transform: uppercase; color: var(--color-text-secondary); margin-bottom: 8px;">Dynamic Indicators</h4>
+                <div class="params-grid" id="params-list">
+                    <!-- Filled dynamically -->
+                </div>
+
+                <div style="margin-top: 24px;">
+                    <button class="btn btn-secondary" onclick="forceOptimize()" style="width: 100%; justify-content: center;">
+                        <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
+                        Force Heuristic
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 4: Connector Configuration Panel -->
+        <div class="col-span-1">
+            <div class="glass-card" style="height: 100%;">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="plug" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
+                    Connectors
+                </h3>
+                
+                <div class="config-form">
+                    <div class="input-group">
+                        <label for="broker-select">Select Broker</label>
+                        <select id="broker-select" onchange="selectBroker(this.value)">
+                            <option value="mock">Mock Simulator</option>
+                            <option value="zerodha">Zerodha Kite Connect</option>
+                            <option value="icicidirect">ICICI Breeze API</option>
+                            <option value="fyers">Fyers API v3</option>
+                        </select>
+                    </div>
+
+                    <!-- Credential Fields (Context changes based on selection) -->
+                    <div id="credentials-form-container">
+                        <div id="fields-zerodha" class="credentials-fields" style="display:none;">
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Kite API Key</label>
+                                <input type="password" id="z-api-key" placeholder="Enter API Key">
+                            </div>
+                            <div class="input-group">
+                                <label>Access Token</label>
+                                <input type="password" id="z-access-token" placeholder="Enter Access Token">
+                            </div>
+                        </div>
+
+                        <div id="fields-icicidirect" class="credentials-fields" style="display:none;">
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Breeze API Key</label>
+                                <input type="password" id="i-api-key" placeholder="Enter API Key">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Secret Key</label>
+                                <input type="password" id="i-secret-key" placeholder="Enter Secret Key">
+                            </div>
+                            <div class="input-group">
+                                <label>Session Token</label>
+                                <input type="password" id="i-session-token" placeholder="Enter Session Token">
+                            </div>
+                        </div>
+
+                        <div id="fields-fyers" class="credentials-fields" style="display:none;">
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Client ID</label>
+                                <input type="password" id="f-client-id" placeholder="Enter App Client ID">
+                            </div>
+                            <div class="input-group">
+                                <label>Access Token</label>
+                                <input type="password" id="f-access-token" placeholder="Enter Access Token">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button class="btn" id="save-creds-btn" onclick="saveCredentials()" style="display:none; width: 100%; justify-content: center; margin-top: 10px;">
+                        Save & Connect API
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 4a: Historical Backtesting Panel -->
+        <div class="col-span-2">
+            <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                <div>
+                    <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
+                        <i data-lucide="play-circle" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
+                        Historical Backtesting
+                    </h3>
+                    <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; margin-bottom: 16px;">
+                        Simulate the trading agent's performance across any historical time window. Running a backtest will temporarily pause the live simulation and reset metrics.
+                    </p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
+                        <div class="input-group">
+                            <label for="backtest-start">Start Date</label>
+                            <input type="date" id="backtest-start">
+                        </div>
+                        <div class="input-group">
+                            <label for="backtest-end">End Date</label>
+                            <input type="date" id="backtest-end">
+                        </div>
+                    </div>
+                </div>
+                
+                <button class="btn" onclick="startBacktest()" style="width: 100%; justify-content: center;">
+                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
+                    Run Historical Backtest
+                </button>
+            </div>
+        </div>
+
+        <!-- Column 5: Live Logs & Console -->
+        <div class="col-span-2">
+            <div class="glass-card" style="height: 100%;">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                    <i data-lucide="terminal" style="color: var(--color-accent-primary); width: 20px; height: 20px;"></i>
+                    Agent Execution Console Logs
+                </h3>
+                <div class="console-log" id="console-logs">
+                    <!-- Populated by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Column 6: Completed Trade History -->
+        <div class="col-span-2">
+            <div class="glass-card" style="height: 100%;">
+                <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px; margin-bottom: 14px;">
+                    <i data-lucide="history" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
+                    Intraday Completed Trades Log
+                </h3>
+                <div class="table-container" style="max-height: 250px; overflow-y: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Symbol</th>
+                                <th>Dir</th>
+                                <th>Entry</th>
+                                <th>Exit</th>
+                                <th>P&L (Rs.)</th>
+                                <th>Exit Reason</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-table-body">
+                            <!-- Filled dynamically -->
+                        </tbody>
+                    </table>
+                    <div id="no-trades" style="text-align: center; padding: 30px; color: var(--color-text-secondary); font-size: 14px;">
+                        No trades completed yet. Waiting for market action...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Global variables
+        let equityChartInstance = null;
+        let lastLoggedTradesCount = 0;
+        let pollingInterval = null;
+
+        // Initialize lucide icons
+        lucide.createIcons();
+
+        // Initialize default backtesting date pickers (7 days ago to yesterday)
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        
+        document.getElementById('backtest-start').value = sevenDaysAgo.toISOString().split('T')[0];
+        document.getElementById('backtest-end').value = yesterday.toISOString().split('T')[0];
+
+        // Initialize chart
+        function initChart(dataPoints = []) {
+            const ctx = document.getElementById('equityChart').getContext('2d');
+            
+            const labels = dataPoints.map((_, idx) => `T${idx + 1}`);
+            const data = [];
+            let cumulativePnL = 0;
+            dataPoints.forEach(p => {
+                cumulativePnL += p;
+                data.push(cumulativePnL);
+            });
+
+            if (equityChartInstance) {
+                equityChartInstance.destroy();
+            }
+
+            equityChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['Start'],
+                    datasets: [{
+                        label: 'Cumulative P&L (Rs.)',
+                        data: data.length ? data : [0],
+                        borderColor: '#8B5CF6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.3,
+                        fill: true,
+                        pointBackgroundColor: '#06B6D4',
+                        pointBorderColor: '#fff',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9CA3AF' }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#9CA3AF' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        // Fetch state and metrics periodically
+        async function fetchDashboardData() {
+            try {
+                // Fetch State (Check auth)
+                const stateRes = await fetch('/api/state');
+                if (stateRes.status === 401) {
+                    stopDashboardPolling();
+                    document.getElementById('login-overlay').classList.remove('hidden');
+                    return;
+                }
+                const state = await stateRes.json();
+                
+                // Fetch Trades
+                const tradesRes = await fetch('/api/trades');
+                const trades = await tradesRes.json();
+                
+                // Fetch Logs
+                const logsRes = await fetch('/api/logs');
+                const logs = await logsRes.json();
+                
+                // Fetch Metrics
+                const metricsRes = await fetch('/api/metrics');
+                const metrics = await metricsRes.json();
+
+                updateUI(state, trades, logs, metrics);
+            } catch (err) {
+                console.error("Error fetching state data:", err);
+            }
+        }
+
+        // Update HTML interface
+        function updateUI(state, trades, logs, metrics) {
+            // Update time clock
+            document.getElementById('sim-time').textContent = state.virtual_time.split(" ")[1] || state.virtual_time;
+            
+            // Play pause status
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const playPauseIcon = document.getElementById('play-pause-icon');
+            const playPauseText = document.getElementById('play-pause-text');
+            
+            if (state.is_running) {
+                playPauseIcon.setAttribute('data-lucide', 'pause');
+                playPauseText.textContent = 'Pause';
+                playPauseBtn.className = 'btn';
+            } else {
+                playPauseIcon.setAttribute('data-lucide', 'play');
+                playPauseText.textContent = 'Resume';
+                playPauseBtn.className = 'btn btn-secondary';
+            }
+            lucide.createIcons();
+
+            // Update PnL
+            const pnlVal = document.getElementById('metric-pnl');
+            pnlVal.textContent = `Rs. ${state.total_pnl.toFixed(2)}`;
+            if (state.total_pnl >= 0) {
+                pnlVal.className = 'metric-value profit-text';
+            } else {
+                pnlVal.className = 'metric-value loss-text';
+            }
+            document.getElementById('metric-pnl-sub').textContent = `Realised: Rs. ${state.realized_pnl.toFixed(2)}`;
+
+            // Update Exposure
+            document.getElementById('metric-exposure').textContent = `Rs. ${state.exposure.toFixed(2)}`;
+            const exposureBar = document.getElementById('exposure-bar');
+            const expPct = Math.min(100, (state.exposure / state.max_exposure) * 100);
+            exposureBar.style.width = `${expPct}%`;
+
+            // Update Win Rate
+            document.getElementById('metric-win-rate').textContent = `${metrics.win_rate.toFixed(1)}%`;
+            const wins = trades.filter(t => t.pnl > 0).length;
+            const losses = trades.length - wins;
+            document.getElementById('metric-win-rate-sub').textContent = `Wins: ${wins} | Losses: ${losses}`;
+
+            // Update Trades
+            document.getElementById('metric-trades').textContent = `${state.trade_count} / ${state.max_trades}`;
+
+            // Update Connector
+            document.getElementById('metric-broker').textContent = state.active_broker;
+            const brokerStatusBadge = document.getElementById('broker-status-badge');
+            if (state.active_broker === 'MockBrokerConnector') {
+                brokerStatusBadge.innerHTML = `<i data-lucide="check-circle" style="width: 12px; height: 12px;"></i> Active Simulation`;
+                brokerStatusBadge.style.color = 'var(--color-profit)';
+            } else {
+                brokerStatusBadge.innerHTML = `<i data-lucide="shield" style="width: 12px; height: 12px;"></i> API Online`;
+                brokerStatusBadge.style.color = 'var(--color-accent-secondary)';
+            }
+            lucide.createIcons();
+
+            // Update Watchlists
+            const moversList = document.getElementById('movers-list');
+            moversList.innerHTML = '';
+            state.watchlist_movers.forEach(m => {
+                const item = document.createElement('div');
+                item.className = 'watchlist-item';
+                const trendClass = m.change_percent >= 0 ? 'profit-text' : 'loss-text';
+                const trendSign = m.change_percent >= 0 ? '+' : '';
+                item.innerHTML = `
+                    <span class="stock-badge">${m.symbol}</span>
+                    <span style="font-weight: 500;">Rs. ${m.price.toFixed(2)}</span>
+                    <span class="${trendClass}" style="font-weight: 600;">${trendSign}${m.change_percent.toFixed(2)}%</span>
+                `;
+                moversList.appendChild(item);
+            });
+
+            const newsList = document.getElementById('news-list');
+            newsList.innerHTML = '';
+            state.watchlist_news.forEach(n => {
+                const item = document.createElement('div');
+                item.className = 'watchlist-item';
+                const tagClass = n.sentiment >= 0 ? 'sentiment-tag sentiment-positive' : 'sentiment-tag sentiment-negative';
+                const tagVal = n.sentiment >= 0 ? 'Bullish' : 'Bearish';
+                item.innerHTML = `
+                    <div style="display:flex; flex-direction:column; gap:4px;">
+                        <span class="stock-badge" style="width:fit-content;">${n.symbol}</span>
+                        <span style="font-size:12px; font-weight:500;">${n.headline}</span>
+                    </div>
+                    <span class="${tagClass}">${tagVal}</span>
+                `;
+                newsList.appendChild(item);
+            });
+
+            // Update Positions
+            const posBody = document.getElementById('positions-table-body');
+            posBody.innerHTML = '';
+            if (state.positions.length === 0) {
+                document.getElementById('no-positions').style.display = 'block';
+            } else {
+                document.getElementById('no-positions').style.display = 'none';
+                state.positions.forEach(p => {
+                    const tr = document.createElement('tr');
+                    const dir = p.qty > 0 ? 'LONG' : 'SHORT';
+                    const dirClass = p.qty > 0 ? 'direction-badge direction-long' : 'direction-badge direction-short';
+                    const pnlClass = p.pnl >= 0 ? 'profit-text' : 'loss-text';
+                    tr.innerHTML = `
+                        <td><span class="stock-badge">${p.symbol}</span></td>
+                        <td><span class="${dirClass}">${dir}</span></td>
+                        <td style="font-weight: 500;">${Math.abs(p.qty)}</td>
+                        <td>Rs. ${p.avg_price.toFixed(2)}</td>
+                        <td>Rs. ${p.current_price.toFixed(2)}</td>
+                        <td class="${pnlClass}" style="font-weight: 600;">Rs. ${p.pnl.toFixed(2)}</td>
+                    `;
+                    posBody.appendChild(tr);
+                });
+            }
+
+            // Update Trades Log
+            const tradesBody = document.getElementById('trades-table-body');
+            tradesBody.innerHTML = '';
+            if (trades.length === 0) {
+                document.getElementById('no-trades').style.display = 'block';
+            } else {
+                document.getElementById('no-trades').style.display = 'none';
+                const displayTrades = [...trades].reverse();
+                displayTrades.forEach(t => {
+                    const tr = document.createElement('tr');
+                    // Display either simulated date+time or just time
+                    const timestampVal = t.timestamp || "";
+                    let displayTime = "--:--";
+                    if (timestampVal.includes("T")) {
+                        const parts = timestampVal.split("T");
+                        const datePart = parts[0];
+                        const timePart = parts[1].substring(0, 5);
+                        displayTime = `${datePart} ${timePart}`;
+                    } else if (timestampVal.includes(" ")) {
+                        displayTime = timestampVal;
+                    }
+                    
+                    const dirClass = t.direction === 'LONG' ? 'direction-badge direction-long' : 'direction-badge direction-short';
+                    const pnlClass = t.pnl >= 0 ? 'profit-text' : 'loss-text';
+                    const pnlSign = t.pnl >= 0 ? '+' : '';
+                    tr.innerHTML = `
+                        <td>${displayTime}</td>
+                        <td><span class="stock-badge">${t.symbol}</span></td>
+                        <td><span class="${dirClass}">${t.direction}</span></td>
+                        <td>${t.entry_price.toFixed(2)}</td>
+                        <td>${t.exit_price.toFixed(2)}</td>
+                        <td class="${pnlClass}" style="font-weight: 600;">${pnlSign}${t.pnl.toFixed(2)}</td>
+                        <td style="font-size: 12px; color: var(--color-text-secondary);">${t.exit_reason}</td>
+                    `;
+                    tradesBody.appendChild(tr);
+                });
+            }
+
+            // Update Chart if number of trades changed
+            if (trades.length !== lastLoggedTradesCount || !equityChartInstance) {
+                lastLoggedTradesCount = trades.length;
+                initChart(trades.map(t => t.pnl));
+            }
+
+            // Update Logs Console
+            const consoleLogs = document.getElementById('console-logs');
+            consoleLogs.innerHTML = '';
+            logs.forEach(l => {
+                const line = document.createElement('div');
+                line.className = 'console-line';
+                
+                const time = l.timestamp.includes(" ") ? l.timestamp : l.timestamp;
+                const lvlClass = `level-${l.level.toLowerCase()}`;
+                
+                line.innerHTML = `
+                    <span class="console-time">[${time}]</span>
+                    <span class="console-level ${lvlClass}">${l.level}</span>
+                    <span>${l.message}</span>
+                `;
+                consoleLogs.appendChild(line);
+            });
+            // Auto scroll console
+            consoleLogs.scrollTop = consoleLogs.scrollHeight;
+
+            // Update parameters list
+            const paramsList = document.getElementById('params-list');
+            paramsList.innerHTML = '';
+            const displayKeys = ["ema_fast", "ema_slow", "rsi_period", "entry_threshold", "weight_ema", "weight_rsi", "weight_macd"];
+            displayKeys.forEach(k => {
+                const box = document.createElement('div');
+                box.className = 'param-box';
+                let label = k.replace("_", " ").toUpperCase();
+                let val = state.strategy_params[k];
+                box.innerHTML = `
+                    <span class="param-label">${label}</span>
+                    <span class="param-value">${val}</span>
+                `;
+                paramsList.appendChild(box);
+            });
+        }
+
+        // Toggle Running status
+        async function toggleRun() {
+            try {
+                await fetch('/api/toggle-run', { method: 'POST' });
+                fetchDashboardData();
+            } catch (err) { console.error(err); }
+        }
+
+        // Set speed multiplier
+        async function setSpeed(val) {
+            try {
+                await fetch('/api/set-speed', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ multiplier: val })
+                });
+                fetchDashboardData();
+            } catch (err) { console.error(err); }
+        }
+
+        // Reset simulation
+        async function resetSimulation() {
+            if (confirm("Reset simulation data, trades history, and start clock from 9:00 AM?")) {
+                try {
+                    await fetch('/api/reset-simulation', { method: 'POST' });
+                    fetchDashboardData();
+                } catch (err) { console.error(err); }
+            }
+        }
+
+        // Force manual optimization search
+        async function forceOptimize() {
+            try {
+                const res = await fetch('/api/force-optimize', { method: 'POST' });
+                const data = await res.json();
+                alert("Self-Improvement completed! Adjusted strategy weights saved.");
+                fetchDashboardData();
+            } catch (err) { console.error(err); }
+        }
+
+        // Handle broker dropdown selection
+        function selectBroker(val) {
+            // Show/hide correct key fields
+            document.querySelectorAll('.credentials-fields').forEach(f => f.style.display = 'none');
+            
+            if (val !== 'mock') {
+                document.getElementById(`fields-${val}`).style.display = 'block';
+                document.getElementById('save-creds-btn').style.display = 'block';
+            } else {
+                document.getElementById('save-creds-btn').style.display = 'none';
+                confirmBrokerSelection('mock');
+            }
+        }
+
+        async function confirmBrokerSelection(brokerName) {
+            try {
+                const res = await fetch('/api/select-broker', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ broker_name: brokerName })
+                });
+                if (!res.ok) {
+                    const err = await res.json();
+                    alert(err.detail);
+                    document.getElementById('broker-select').value = 'mock';
+                    selectBroker('mock');
+                } else {
+                    fetchDashboardData();
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        // Save broker credentials & connect
+        async function saveCredentials() {
+            const broker = document.getElementById('broker-select').value;
+            let keys = {};
+
+            if (broker === 'zerodha') {
+                keys = {
+                    api_key: document.getElementById('z-api-key').value,
+                    access_token: document.getElementById('z-access-token').value
+                };
+            } else if (broker === 'icicidirect') {
+                keys = {
+                    api_key: document.getElementById('i-api-key').value,
+                    secret_key: document.getElementById('i-secret-key').value,
+                    session_token: document.getElementById('i-session-token').value
+                };
+            } else if (broker === 'fyers') {
+                keys = {
+                    client_id: document.getElementById('f-client-id').value,
+                    access_token: document.getElementById('f-access-token').value
+                };
+            }
+
+            try {
+                const res = await fetch('/api/save-credentials', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ broker: broker, keys: keys })
+                });
+                
+                if (res.ok) {
+                    alert("Credentials saved. Connected successfully!");
+                    confirmBrokerSelection(broker);
+                } else {
+                    const err = await res.json();
+                    alert(`Failed to connect: ${err.detail}`);
+                }
+            } catch (err) {
+                alert(`Error: ${err.message}`);
+            }
+        }
+
+        // ================= AUTHENTICATION SCRIPTS =================
+        function switchAuthTab(mode) {
+            if (mode === 'login') {
+                document.getElementById('tab-login').classList.add('active');
+                document.getElementById('tab-register').classList.remove('active');
+                document.getElementById('login-form').style.display = 'flex';
+                document.getElementById('register-form').style.display = 'none';
+                document.getElementById('auth-switch-text').innerHTML = "Don't have an account? <span>Register here</span>";
+            } else {
+                document.getElementById('tab-login').classList.remove('active');
+                document.getElementById('tab-register').classList.add('active');
+                document.getElementById('login-form').style.display = 'none';
+                document.getElementById('register-form').style.display = 'flex';
+                document.getElementById('auth-switch-text').innerHTML = "Already have an account? <span>Sign in here</span>";
+            }
+        }
+        
+        function toggleAuthMode() {
+            const isLoginActive = document.getElementById('tab-login').classList.contains('active');
+            switchAuthTab(isLoginActive ? 'register' : 'login');
+        }
+
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/user');
+                const data = await res.json();
+                if (data.authenticated) {
+                    document.getElementById('login-overlay').classList.add('hidden');
+                    document.getElementById('header-username').textContent = data.username;
+                    startDashboardPolling();
+                } else {
+                    document.getElementById('login-overlay').classList.remove('hidden');
+                    stopDashboardPolling();
+                }
+            } catch (err) {
+                console.error("Error checking auth:", err);
+            }
+        }
+
+        async function handleAuth(event, type) {
+            event.preventDefault();
+            const usernameId = type === 'login' ? 'login-username' : 'register-username';
+            const passwordId = type === 'login' ? 'login-password' : 'register-password';
+            
+            const username = document.getElementById(usernameId).value;
+            const password = document.getElementById(passwordId).value;
+            
+            const endpoint = type === 'login' ? '/api/login' : '/api/register';
+            
+            try {
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                const data = await res.json();
+                if (res.ok) {
+                    if (type === 'login') {
+                        document.getElementById('login-overlay').classList.add('hidden');
+                        document.getElementById('header-username').textContent = data.username;
+                        document.getElementById('login-username').value = '';
+                        document.getElementById('login-password').value = '';
+                        startDashboardPolling();
+                    } else {
+                        alert("Registration successful! Please login.");
+                        document.getElementById('register-username').value = '';
+                        document.getElementById('register-password').value = '';
+                        switchAuthTab('login');
+                    }
+                } else {
+                    alert(data.detail || "Authentication failed.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                checkAuth();
+            } catch (err) {
+                console.error("Logout failed:", err);
+            }
+        }
+
+        function startDashboardPolling() {
+            fetchDashboardData();
+            if (!pollingInterval) {
+                pollingInterval = setInterval(fetchDashboardData, 1000);
+            }
+        }
+
+        function stopDashboardPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        // ================= BACKTESTING SCRIPTS =================
+        async function startBacktest() {
+            const startDate = document.getElementById('backtest-start').value;
+            const endDate = document.getElementById('backtest-end').value;
+            
+            if (!startDate || !endDate) {
+                alert("Please select both start and end dates.");
+                return;
+            }
+            
+            if (new Date(startDate) > new Date(endDate)) {
+                alert("Start date must be before or equal to end date.");
+                return;
+            }
+            
+            try {
+                const res = await fetch('/api/run-backtest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ start_date: startDate, end_date: endDate })
+                });
+                
+                if (res.ok) {
+                    const modal = document.getElementById('backtest-modal');
+                    document.getElementById('backtest-modal-range').textContent = `Duration: ${startDate} to ${endDate}`;
+                    document.getElementById('backtest-progress-fill').style.width = `0%`;
+                    document.getElementById('backtest-modal-percent').textContent = `0%`;
+                    document.getElementById('backtest-modal-date').textContent = "Starting...";
+                    document.getElementById('backtest-modal-msg').textContent = "Initializing Backtest Engine...";
+                    modal.classList.add('active');
+                    pollBacktestStatus();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || "Failed to start backtest.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
+        }
+        
+        let backtestPollInterval = null;
+        
+        function pollBacktestStatus() {
+            if (backtestPollInterval) clearInterval(backtestPollInterval);
+            
+            backtestPollInterval = setInterval(async () => {
+                try {
+                    const res = await fetch('/api/backtest-status');
+                    if (res.status === 401) {
+                        clearInterval(backtestPollInterval);
+                        backtestPollInterval = null;
+                        document.getElementById('backtest-modal').classList.remove('active');
+                        checkAuth();
+                        return;
+                    }
+                    const status = await res.json();
+                    
+                    if (status.status === 'running') {
+                        document.getElementById('backtest-progress-fill').style.width = `${status.progress}%`;
+                        document.getElementById('backtest-modal-percent').textContent = `${status.progress}%`;
+                        document.getElementById('backtest-modal-date').textContent = status.current_date;
+                        document.getElementById('backtest-modal-msg').textContent = status.message;
+                    } else if (status.status === 'completed') {
+                        clearInterval(backtestPollInterval);
+                        backtestPollInterval = null;
+                        
+                        document.getElementById('backtest-progress-fill').style.width = `100%`;
+                        document.getElementById('backtest-modal-percent').textContent = `100%`;
+                        document.getElementById('backtest-modal-date').textContent = "Completed";
+                        document.getElementById('backtest-modal-msg').textContent = status.message;
+                        
+                        setTimeout(() => {
+                            document.getElementById('backtest-modal').classList.remove('active');
+                            fetchDashboardData();
+                        }, 1000);
+                    } else if (status.status === 'failed') {
+                        clearInterval(backtestPollInterval);
+                        backtestPollInterval = null;
+                        alert(status.message);
+                        document.getElementById('backtest-modal').classList.remove('active');
+                    }
+                } catch (err) {
+                    console.error("Error polling backtest status:", err);
+                }
+            }, 500);
+        }
+
+        // On page load, verify authentication session
+        checkAuth();
+    </script>
+</body>
+</html>
