@@ -1,14 +1,14 @@
 {
-    "ema_fast": 13,
+    "ema_fast": 12,
     "ema_slow": 33,
-    "rsi_period": 13,
-    "rsi_overbought": 79,
-    "rsi_oversold": 30,
+    "rsi_period": 12,
+    "rsi_overbought": 65,
+    "rsi_oversold": 23,
     "macd_fast": 12,
     "macd_slow": 26,
     "macd_signal": 9,
-    "weight_ema": 0.4,
-    "weight_rsi": 0.33,
-    "weight_macd": 0.27,
-    "entry_threshold": 0.8
+    "weight_ema": 0.71,
+    "weight_rsi": 0.19,
+    "weight_macd": 0.1,
+    "entry_threshold": 0.45
 }

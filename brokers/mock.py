@@ -192,25 +192,33 @@ class MockBrokerConnector(BaseConnector):
         return list(self.positions.values())
 
     def get_historical_data(self, symbol: str, interval: str = "5minute", duration_days: int = 5) -> List[Dict[str, Any]]:
-        # Return a simulated list of historical candles with some volatility
+        # Return a simulated list of historical candles with a realistic random walk
+        # so that EMAs, RSI, and MACD produce meaningful trend signals.
         symbol_upper = symbol.upper()
-        base_price = self.current_prices.get(symbol_upper, 100.0)
+        current_price = self.current_prices.get(symbol_upper, 100.0)
         
-        import datetime
+        num_candles = 50
+        
+        # Generate a random walk that ends exactly at current_price.
+        # Walk backwards from current_price using small random returns,
+        # producing a continuous price series with realistic persistence.
+        prices = [current_price]
+        for _ in range(num_candles):
+            # ~0.3% volatility per 5-minute candle
+            ret = random.normalvariate(0, 0.003)
+            prices.append(prices[-1] / (1 + ret))
+        prices.reverse()  # oldest-first; last element is current_price
+        
         now = self.virtual_time
         candles = []
-        
-        # Make a realistic-looking back history of 50 intervals
-        for i in range(50, 0, -1):
-            time_offset = datetime.timedelta(minutes=5 * i)
+        for i in range(num_candles):
+            time_offset = datetime.timedelta(minutes=5 * (num_candles - i))
             candle_time = now - time_offset
             
-            # Simple walk backwards
-            noise = random.uniform(-10.0, 10.0)
-            c_open = base_price + noise
-            c_close = c_open + random.uniform(-5.0, 5.0)
-            c_high = max(c_open, c_close) + random.uniform(0.0, 3.0)
-            c_low = min(c_open, c_close) - random.uniform(0.0, 3.0)
+            c_open = prices[i]
+            c_close = prices[i + 1]
+            c_high = max(c_open, c_close) * (1 + random.uniform(0, 0.002))
+            c_low = min(c_open, c_close) * (1 - random.uniform(0, 0.002))
             
             candles.append({
                 "date": candle_time.isoformat(),

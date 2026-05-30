@@ -45,6 +45,7 @@ agent = MarginTradingAgent(active_broker, storage, DATA_DIR)
 # Global simulation state
 is_running = True
 simulation_speed = 60.0  # Default 60x speed (1 second real-time = 1 minute simulation time)
+mock_broker.set_speed(simulation_speed)  # Ensure speed is applied on startup
 credentials_cache = {
     "zerodha": {"api_key": "", "access_token": ""},
     "icicidirect": {"api_key": "", "secret_key": "", "session_token": ""},
@@ -88,6 +89,8 @@ backtest_status = {
     "current_date": "",
     "message": ""
 }
+
+last_backtest_params = None  # Stores last backtest dates for replay
 
 # Background worker loop
 async def trading_agent_loop():
@@ -309,11 +312,12 @@ def run_backtest_worker(start_str: str, end_str: str):
 
 @app.post("/api/run-backtest")
 def run_backtest(data: BacktestModel, background_tasks: BackgroundTasks, username: str = Depends(verify_auth)):
-    global backtest_status, is_running
+    global backtest_status, is_running, last_backtest_params
     if backtest_status["status"] == "running":
         raise HTTPException(status_code=400, detail="A backtest is already running.")
         
     is_running = False  # Pause live simulation
+    last_backtest_params = {"start_date": data.start_date, "end_date": data.end_date}
     backtest_status.update({
         "status": "running",
         "progress": 0,
@@ -325,6 +329,27 @@ def run_backtest(data: BacktestModel, background_tasks: BackgroundTasks, usernam
     
     background_tasks.add_task(run_backtest_worker, data.start_date, data.end_date)
     return {"status": "started"}
+
+@app.post("/api/replay-backtest")
+def replay_backtest(background_tasks: BackgroundTasks, username: str = Depends(verify_auth)):
+    global backtest_status, is_running, last_backtest_params
+    if not last_backtest_params:
+        raise HTTPException(status_code=400, detail="No previous backtest to replay. Run a backtest first.")
+    if backtest_status["status"] == "running":
+        raise HTTPException(status_code=400, detail="A backtest is already running.")
+        
+    is_running = False
+    backtest_status.update({
+        "status": "running",
+        "progress": 0,
+        "start_date": last_backtest_params["start_date"],
+        "end_date": last_backtest_params["end_date"],
+        "current_date": last_backtest_params["start_date"],
+        "message": "Replaying backtest..."
+    })
+    
+    background_tasks.add_task(run_backtest_worker, last_backtest_params["start_date"], last_backtest_params["end_date"])
+    return {"status": "started", "start_date": last_backtest_params["start_date"], "end_date": last_backtest_params["end_date"]}
 
 @app.get("/api/backtest-status")
 def get_backtest_status(username: str = Depends(verify_auth)):

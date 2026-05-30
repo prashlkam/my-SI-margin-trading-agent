@@ -432,23 +432,6 @@
             border-color: var(--color-accent-primary);
         }
 
-        /* Speed slider */
-        .speed-slider-container {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid var(--glass-border);
-            padding: 8px 16px;
-            border-radius: 30px;
-        }
-
-        .speed-label {
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--color-text-secondary);
-        }
-
         /* Scrollbar decoration */
         ::-webkit-scrollbar {
             width: 6px;
@@ -487,6 +470,88 @@
             margin-top: 4px;
             display: block;
             text-align: right;
+        }
+
+        /* ================= BOTTOM CONTROL BAR ================= */
+        .control-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(11, 14, 20, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid var(--glass-border);
+            z-index: 200;
+            padding: 10px 24px;
+            box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        .control-bar-inner {
+            max-width: 1600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-group .control-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-right: 4px;
+            white-space: nowrap;
+        }
+
+        .control-bar select,
+        .control-bar input[type="date"] {
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid var(--glass-border);
+            color: var(--color-text-primary);
+            padding: 5px 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            outline: none;
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .control-bar select:focus,
+        .control-bar input[type="date"]:focus {
+            border-color: var(--color-accent-primary);
+        }
+
+        .control-bar .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+            gap: 4px;
+        }
+
+        .control-bar .btn-sm i {
+            width: 14px;
+            height: 14px;
+        }
+
+        .control-separator {
+            width: 1px;
+            height: 28px;
+            background: var(--glass-border);
+            margin: 0 4px;
+        }
+
+        body {
+            padding-bottom: 68px;
         }
 
         /* ================= AUTHENTICATION OVERLAY ================= */
@@ -594,59 +659,71 @@
             font-weight: 500;
         }
 
-        /* ================= BACKTEST MODAL ================= */
-        #backtest-modal {
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* ================= BACKTEST PROGRESS PANEL (above control bar) ================= */
+        .backtest-panel {
             position: fixed;
-            top: 0;
+            bottom: 60px;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(11, 14, 20, 0.85);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            z-index: 999;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            right: 0;
+            z-index: 150;
+            padding: 0 24px;
             opacity: 0;
-            visibility: hidden;
-            transition: opacity 0.3s, visibility 0.3s;
+            transform: translateY(20px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
         }
-        
-        #backtest-modal.active {
+
+        .backtest-panel.active {
             opacity: 1;
-            visibility: visible;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
-        .backtest-modal-card {
-            width: 480px;
-            padding: 32px;
-            text-align: center;
-            border-radius: 20px;
-            box-shadow: 0 20px 48px rgba(0, 0, 0, 0.5);
-        }
-
-        .progress-bar-large {
-            width: 100%;
-            height: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 6px;
-            overflow: hidden;
-            margin: 24px 0 12px 0;
+        .backtest-panel-inner {
+            background: rgba(15, 19, 30, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
             border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 12px 20px;
+            box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            max-width: 1600px;
+            margin: 0 auto;
         }
 
-        .progress-bar-large-fill {
+        .backtest-panel.completed .backtest-panel-inner {
+            border-color: rgba(16, 185, 129, 0.3);
+            box-shadow: 0 -4px 24px rgba(16, 185, 129, 0.1);
+        }
+
+        .backtest-panel.failed .backtest-panel-inner {
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .backtest-progress-track {
+            flex: 1;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 4px;
+            overflow: hidden;
+            min-width: 100px;
+        }
+
+        .backtest-progress-fill {
             height: 100%;
             width: 0%;
             background: linear-gradient(90deg, var(--color-accent-secondary), var(--color-accent-primary));
             transition: width 0.3s ease;
+            border-radius: 4px;
             box-shadow: var(--glow-accent);
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
         }
     </style>
 </head>
@@ -697,25 +774,24 @@
         </div>
     </div>
 
-    <!-- Backtest Progress Modal -->
-    <div id="backtest-modal">
-        <div class="backtest-modal-card glass-card">
-            <h3 style="font-size: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px;">
-                <i data-lucide="loader" class="logo-icon" style="animation: spin 2s linear infinite;"></i>
-                Simulating Historical Trades
-            </h3>
-            <p id="backtest-modal-range" style="font-size: 13px; color: var(--color-text-secondary);"></p>
-            
-            <div class="progress-bar-large">
-                <div class="progress-bar-large-fill" id="backtest-progress-fill"></div>
+    <!-- Backtest Progress Panel (appears above control bar) -->
+    <div id="backtest-panel" class="backtest-panel">
+        <div class="backtest-panel-inner">
+            <div style="display: flex; align-items: center; gap: 12px; flex: 1;">
+                <i data-lucide="loader" id="backtest-spinner" style="animation: spin 2s linear infinite; width: 18px; height: 18px; color: var(--color-accent-primary);"></i>
+                <i data-lucide="check-circle" id="backtest-complete-icon" style="display: none; width: 18px; height: 18px; color: var(--color-profit);"></i>
+                <span id="backtest-panel-title" style="font-weight: 600; font-size: 14px; white-space: nowrap;">Backtest in Progress</span>
             </div>
             
-            <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--color-text-secondary); margin-bottom: 16px;">
-                <span id="backtest-modal-date">Simulating...</span>
-                <span id="backtest-modal-percent">0%</span>
+            <div style="flex: 2; display: flex; align-items: center; gap: 10px;">
+                <span id="backtest-panel-date" style="font-size: 12px; color: var(--color-text-secondary); min-width: 110px;">Starting...</span>
+                <div class="backtest-progress-track">
+                    <div class="backtest-progress-fill" id="backtest-progress-fill"></div>
+                </div>
+                <span id="backtest-panel-percent" style="font-size: 12px; font-weight: 600; min-width: 40px; text-align: right;">0%</span>
             </div>
             
-            <p id="backtest-modal-msg" style="font-size: 14px; font-weight: 500; color: var(--color-accent-secondary);"></p>
+            <span id="backtest-panel-msg" style="font-size: 12px; color: var(--color-accent-secondary); flex: 1; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Initializing...</span>
         </div>
     </div>
 
@@ -736,26 +812,7 @@
                 <span id="sim-time">09:00:00</span>
             </div>
 
-            <!-- Speed multiplier buttons -->
-            <div class="speed-slider-container">
-                <span class="speed-label">Speed</span>
-                <button class="btn btn-secondary" onclick="setSpeed(1)" style="padding: 4px 8px; font-size: 11px;">1x</button>
-                <button class="btn btn-secondary" onclick="setSpeed(10)" style="padding: 4px 8px; font-size: 11px;">10x</button>
-                <button class="btn btn-secondary" onclick="setSpeed(60)" style="padding: 4px 8px; font-size: 11px;">60x</button>
-                <button class="btn btn-secondary" onclick="setSpeed(300)" style="padding: 4px 8px; font-size: 11px;">300x</button>
-            </div>
-
-            <button class="btn" id="play-pause-btn" onclick="toggleRun()">
-                <i data-lucide="pause" id="play-pause-icon" style="width: 16px; height: 16px;"></i>
-                <span id="play-pause-text">Pause</span>
-            </button>
-
-            <button class="btn btn-secondary" onclick="resetSimulation()" title="Reset Clock & Backtest">
-                <i data-lucide="rotate-ccw" style="width: 16px; height: 16px;"></i>
-                Reset
-            </button>
-
-            <!-- User Profile & Logout -->
+            <!-- User Profile -->
             <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--glass-border); padding-left: 16px;">
                 <i data-lucide="user" style="width: 16px; height: 16px; color: var(--color-text-secondary);"></i>
                 <span id="header-username" style="font-size: 13px; font-weight: 600; color: var(--color-text-secondary);">Guest</span>
@@ -925,34 +982,21 @@
                     <!-- Filled dynamically -->
                 </div>
 
-                <div style="margin-top: 24px;">
-                    <button class="btn btn-secondary" onclick="forceOptimize()" style="width: 100%; justify-content: center;">
-                        <i data-lucide="sparkles" style="width: 14px; height: 14px;"></i>
-                        Force Heuristic
-                    </button>
-                </div>
             </div>
         </div>
 
         <!-- Column 4: Connector Configuration Panel -->
-        <div class="col-span-1">
+        <div class="col-span-2">
             <div class="glass-card" style="height: 100%;">
                 <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
                     <i data-lucide="plug" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
-                    Connectors
+                    Connectors — Credential Configuration
                 </h3>
+                <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px;">
+                    Select a broker below and configure API credentials. The broker dropdown is also available in the bottom control bar.
+                </p>
                 
                 <div class="config-form">
-                    <div class="input-group">
-                        <label for="broker-select">Select Broker</label>
-                        <select id="broker-select" onchange="selectBroker(this.value)">
-                            <option value="mock">Mock Simulator</option>
-                            <option value="zerodha">Zerodha Kite Connect</option>
-                            <option value="icicidirect">ICICI Breeze API</option>
-                            <option value="fyers">Fyers API v3</option>
-                        </select>
-                    </div>
-
                     <!-- Credential Fields (Context changes based on selection) -->
                     <div id="credentials-form-container">
                         <div id="fields-zerodha" class="credentials-fields" style="display:none;">
@@ -1000,37 +1044,6 @@
             </div>
         </div>
 
-        <!-- Column 4a: Historical Backtesting Panel -->
-        <div class="col-span-2">
-            <div class="glass-card" style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                <div>
-                    <h3 style="font-size: 18px; display: flex; align-items: center; gap: 8px;">
-                        <i data-lucide="play-circle" style="color: var(--color-accent-secondary); width: 20px; height: 20px;"></i>
-                        Historical Backtesting
-                    </h3>
-                    <p style="font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; margin-bottom: 16px;">
-                        Simulate the trading agent's performance across any historical time window. Running a backtest will temporarily pause the live simulation and reset metrics.
-                    </p>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px;">
-                        <div class="input-group">
-                            <label for="backtest-start">Start Date</label>
-                            <input type="date" id="backtest-start">
-                        </div>
-                        <div class="input-group">
-                            <label for="backtest-end">End Date</label>
-                            <input type="date" id="backtest-end">
-                        </div>
-                    </div>
-                </div>
-                
-                <button class="btn" onclick="startBacktest()" style="width: 100%; justify-content: center;">
-                    <i data-lucide="play" style="width: 16px; height: 16px;"></i>
-                    Run Historical Backtest
-                </button>
-            </div>
-        </div>
-
         <!-- Column 5: Live Logs & Console -->
         <div class="col-span-2">
             <div class="glass-card" style="height: 100%;">
@@ -1075,6 +1088,68 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Bottom Control Bar -->
+    <div class="control-bar" id="control-bar">
+        <div class="control-bar-inner">
+            <!-- Left: Simulation Speed & Playback -->
+            <div class="control-group">
+                <span class="control-label">Speed</span>
+                <select id="speed-select" onchange="setSpeed(parseFloat(this.value))">
+                    <option value="1">1x</option>
+                    <option value="10">10x</option>
+                    <option value="60" selected>60x</option>
+                    <option value="300">300x</option>
+                </select>
+
+                <div class="control-separator"></div>
+
+                <button class="btn btn-sm" id="play-pause-btn" onclick="toggleRun()">
+                    <i data-lucide="pause" id="play-pause-icon"></i>
+                    <span id="play-pause-text">Pause</span>
+                </button>
+
+                <button class="btn btn-sm btn-secondary" onclick="resetSimulation()">
+                    <i data-lucide="rotate-ccw"></i>
+                    Reset
+                </button>
+
+                <button class="btn btn-sm btn-secondary" onclick="replayBacktest()" id="replay-btn">
+                    <i data-lucide="refresh-ccw"></i>
+                    Replay
+                </button>
+            </div>
+
+            <!-- Middle: Backtest Controls -->
+            <div class="control-group">
+                <span class="control-label">Backtest</span>
+                <input type="date" id="backtest-start">
+                <input type="date" id="backtest-end">
+                <button class="btn btn-sm" onclick="startBacktest()">
+                    <i data-lucide="play"></i>
+                    Run
+                </button>
+            </div>
+
+            <!-- Right: Broker Select + Optimize -->
+            <div class="control-group">
+                <span class="control-label">Broker</span>
+                <select id="broker-select" onchange="selectBroker(this.value)">
+                    <option value="mock">Mock Simulator</option>
+                    <option value="zerodha">Zerodha</option>
+                    <option value="icicidirect">ICICI Breeze</option>
+                    <option value="fyers">Fyers API</option>
+                </select>
+
+                <div class="control-separator"></div>
+
+                <button class="btn btn-sm btn-secondary" onclick="forceOptimize()">
+                    <i data-lucide="sparkles"></i>
+                    Optimize
+                </button>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -1215,13 +1290,19 @@
             if (state.is_running) {
                 playPauseIcon.setAttribute('data-lucide', 'pause');
                 playPauseText.textContent = 'Pause';
-                playPauseBtn.className = 'btn';
+                playPauseBtn.className = 'btn btn-sm';
             } else {
                 playPauseIcon.setAttribute('data-lucide', 'play');
                 playPauseText.textContent = 'Resume';
-                playPauseBtn.className = 'btn btn-secondary';
+                playPauseBtn.className = 'btn btn-sm btn-secondary';
             }
             lucide.createIcons();
+
+            // Sync speed dropdown with current speed
+            const speedSelect = document.getElementById('speed-select');
+            if (speedSelect && state.speed_multiplier) {
+                speedSelect.value = String(state.speed_multiplier);
+            }
 
             // Update PnL
             const pnlVal = document.getElementById('metric-pnl');
@@ -1616,7 +1697,38 @@
             }
         }
 
-        // ================= BACKTESTING SCRIPTS =================
+        // ================= BACKTEST PROGRESS PANEL =================
+        function showBacktestPanel(title, rangeText, initialMsg) {
+            const panel = document.getElementById('backtest-panel');
+            document.getElementById('backtest-panel-title').textContent = title;
+            document.getElementById('backtest-panel-date').textContent = rangeText || 'Starting...';
+            document.getElementById('backtest-progress-fill').style.width = '0%';
+            document.getElementById('backtest-panel-percent').textContent = '0%';
+            document.getElementById('backtest-panel-msg').textContent = initialMsg || 'Initializing...';
+            
+            // Reset state icons
+            document.getElementById('backtest-spinner').style.display = 'inline-block';
+            document.getElementById('backtest-complete-icon').style.display = 'none';
+            panel.classList.remove('completed', 'failed');
+            
+            panel.classList.add('active');
+            // Force dashboard to update more frequently during backtest
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = setInterval(fetchDashboardData, 2000);
+            }
+        }
+
+        function hideBacktestPanel() {
+            const panel = document.getElementById('backtest-panel');
+            panel.classList.remove('active', 'completed', 'failed');
+            // Restore normal dashboard polling
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = setInterval(fetchDashboardData, 1000);
+            }
+        }
+
         async function startBacktest() {
             const startDate = document.getElementById('backtest-start').value;
             const endDate = document.getElementById('backtest-end').value;
@@ -1639,13 +1751,7 @@
                 });
                 
                 if (res.ok) {
-                    const modal = document.getElementById('backtest-modal');
-                    document.getElementById('backtest-modal-range').textContent = `Duration: ${startDate} to ${endDate}`;
-                    document.getElementById('backtest-progress-fill').style.width = `0%`;
-                    document.getElementById('backtest-modal-percent').textContent = `0%`;
-                    document.getElementById('backtest-modal-date').textContent = "Starting...";
-                    document.getElementById('backtest-modal-msg').textContent = "Initializing Backtest Engine...";
-                    modal.classList.add('active');
+                    showBacktestPanel('Backtest in Progress', `${startDate} to ${endDate}`, 'Initializing Backtest Engine...');
                     pollBacktestStatus();
                 } else {
                     const err = await res.json();
@@ -1667,7 +1773,7 @@
                     if (res.status === 401) {
                         clearInterval(backtestPollInterval);
                         backtestPollInterval = null;
-                        document.getElementById('backtest-modal').classList.remove('active');
+                        hideBacktestPanel();
                         checkAuth();
                         return;
                     }
@@ -1675,32 +1781,64 @@
                     
                     if (status.status === 'running') {
                         document.getElementById('backtest-progress-fill').style.width = `${status.progress}%`;
-                        document.getElementById('backtest-modal-percent').textContent = `${status.progress}%`;
-                        document.getElementById('backtest-modal-date').textContent = status.current_date;
-                        document.getElementById('backtest-modal-msg').textContent = status.message;
+                        document.getElementById('backtest-panel-percent').textContent = `${status.progress}%`;
+                        document.getElementById('backtest-panel-date').textContent = `Simulating ${status.current_date}`;
+                        document.getElementById('backtest-panel-msg').textContent = status.message;
                     } else if (status.status === 'completed') {
                         clearInterval(backtestPollInterval);
                         backtestPollInterval = null;
                         
+                        // Show completion state
                         document.getElementById('backtest-progress-fill').style.width = `100%`;
-                        document.getElementById('backtest-modal-percent').textContent = `100%`;
-                        document.getElementById('backtest-modal-date').textContent = "Completed";
-                        document.getElementById('backtest-modal-msg').textContent = status.message;
+                        document.getElementById('backtest-panel-percent').textContent = `100%`;
+                        document.getElementById('backtest-panel-date').textContent = 'Completed';
+                        document.getElementById('backtest-panel-msg').textContent = status.message;
+                        document.getElementById('backtest-panel-title').textContent = 'Backtest Complete';
+                        document.getElementById('backtest-spinner').style.display = 'none';
+                        document.getElementById('backtest-complete-icon').style.display = 'inline-block';
+                        document.getElementById('backtest-panel').classList.add('completed');
+                        
+                        // Immediately refresh dashboard with updated data from backtest
+                        fetchDashboardData();
                         
                         setTimeout(() => {
-                            document.getElementById('backtest-modal').classList.remove('active');
-                            fetchDashboardData();
-                        }, 1000);
+                            hideBacktestPanel();
+                        }, 4000);
                     } else if (status.status === 'failed') {
                         clearInterval(backtestPollInterval);
                         backtestPollInterval = null;
-                        alert(status.message);
-                        document.getElementById('backtest-modal').classList.remove('active');
+                        
+                        document.getElementById('backtest-panel-title').textContent = 'Backtest Failed';
+                        document.getElementById('backtest-panel-msg').textContent = status.message;
+                        document.getElementById('backtest-spinner').style.display = 'none';
+                        document.getElementById('backtest-complete-icon').style.display = 'none';
+                        document.getElementById('backtest-panel').classList.add('failed');
+                        
+                        setTimeout(() => {
+                            hideBacktestPanel();
+                        }, 5000);
                     }
                 } catch (err) {
                     console.error("Error polling backtest status:", err);
                 }
             }, 500);
+        }
+
+        // ================= REPLAY BACKTEST =================
+        async function replayBacktest() {
+            try {
+                const res = await fetch('/api/replay-backtest', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    showBacktestPanel('Replaying Backtest', `${data.start_date} to ${data.end_date}`, 'Replaying previous backtest...');
+                    pollBacktestStatus();
+                } else {
+                    const err = await res.json();
+                    alert(err.detail || "No previous backtest to replay.");
+                }
+            } catch (err) {
+                alert("Error connecting to server.");
+            }
         }
 
         // On page load, verify authentication session
