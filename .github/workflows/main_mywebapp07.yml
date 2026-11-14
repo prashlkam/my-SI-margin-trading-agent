@@ -59,6 +59,20 @@ jobs:
           print('health:', r.json())
           "
 
+      # Boot through startup.sh the way App Service does: plain interpreter with the build's
+      # site-packages on PYTHONPATH (ahead of the stdlib). Catches shadowed-stdlib crashes
+      # (e.g. fyers-apiv3's obsolete `asyncio` dependency) that the venv test above can't.
+      - name: Smoke test - boot via startup.sh like App Service
+        run: |
+          SP=$(echo "$PWD"/antenv/lib/python3.*/site-packages)
+          PYTHONPATH="$SP" APP_PATH="$PWD" PYTHON=python DATA_DIR="$(mktemp -d)" PORT=8000 \
+            bash startup.sh > boot.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf localhost:8000/api/health/live; then echo; cat boot.log | grep '^startup:'; exit 0; fi
+            sleep 1
+          done
+          echo "::error::App did not start via startup.sh"; cat boot.log; exit 1
+
       # Oryx (SCM_DO_BUILD_DURING_DEPLOYMENT=true) installs dependencies on the platform at
       # deploy time, so the local virtual environment is excluded from the artifact.
       - name: Upload artifact for deployment jobs
@@ -69,6 +83,7 @@ jobs:
             .
             !antenv/
             !data_files/
+            !boot.log
 
   market-hours-guard:
     runs-on: ubuntu-latest
