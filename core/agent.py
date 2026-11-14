@@ -1,6 +1,10 @@
+import json
 import logging
 import datetime
+import os
+import time
 from typing import Dict, List, Any, Optional
+from core.market_time import now_ist
 from core.strategy import TradingStrategy
 from core.risk_manager import RiskManager
 from core.optimizer import StrategyOptimizer
@@ -34,21 +38,129 @@ class MarginTradingAgent:
         # Cache for historical data of traded stocks to run optimization at 3:25 PM
         self.daily_price_data: Dict[str, List[Dict[str, Any]]] = {}
 
+        # Safety state (FyersAPI.md §6.5)
+        self.kill_switch = False      # manual kill: blocks trading until re-armed
+        self.halted_today = False     # circuit breaker: blocks trading until next day
+        self.halt_reason = ""
+
+        # Optional CPU-quota guard (core.cpu_budget.CpuBudget), set by main.py on Azure F1
+        self.cpu_guard = None
+        # Live-mode daily risk counters persisted across restarts
+        self._risk_state_path = os.path.join(config_dir, "risk_state.json")
+        self._risk_state_date = None
+        self._risk_state_saved = None
+        # symbol -> monotonic time of last exit fill; guards against re-adopting a position
+        # the broker's position book hasn't caught up on yet
+        self._recent_exits: Dict[str, float] = {}
+
         # Log system status
         self.log("Margin Trading Agent Initialised in Standby Mode.")
 
+    @property
+    def is_simulated(self) -> bool:
+        return hasattr(self.broker, "virtual_time")
+
     def log(self, message: str, level: str = "INFO", timestamp: Optional[datetime.datetime] = None):
-        logger.info(message)
+        log_fn = {"CRITICAL": logger.critical, "ERROR": logger.error, "WARNING": logger.warning}.get(level, logger.info)
+        log_fn(message)
         if timestamp is None:
             if hasattr(self.broker, "virtual_time"):
                 timestamp = self.broker.virtual_time
             else:
-                timestamp = datetime.datetime.now()
+                timestamp = now_ist()
         self.storage.save_log_entry(message, level, timestamp)
 
     def set_broker(self, broker: BaseConnector):
         self.broker = broker
         self.log(f"Switched broker connector to {broker.__class__.__name__}.")
+
+    # ---------------------------------------------------------------- safety
+    def engage_kill_switch(self, reason: str = "Manual kill switch"):
+        """Flatten everything and block all trading until rearm() is called."""
+        self.kill_switch = True
+        self.halt_reason = reason
+        self.log(f"KILL SWITCH ENGAGED: {reason}. Flattening all positions.", "CRITICAL")
+        self._flatten_and_verify()
+        self.risk_manager.peak_prices.clear()
+        self.risk_manager.position_directions.clear()
+        self.risk_manager.tp_targets.clear()
+
+    def rearm(self):
+        self.kill_switch = False
+        self.halt_reason = ""
+        self.log("Kill switch re-armed by user. Trading may resume.", "WARNING")
+
+    def halt_for_day(self, reason: str, current_time: datetime.datetime):
+        """Circuit breaker: flatten and stop trading until the next trading day."""
+        if self.halted_today:
+            return
+        self.halted_today = True
+        self.halt_reason = reason
+        self.log(f"CIRCUIT BREAKER: {reason}. Flattening and halting for the day.", "CRITICAL", current_time)
+        self.run_daily_closeout(current_time, reason=reason)
+
+    def _flatten_and_verify(self) -> bool:
+        """close_all_positions(), then re-query; retry once. Returns True if flat."""
+        for attempt in range(2):
+            try:
+                self.broker.close_all_positions()
+            except Exception as e:
+                self.log(f"close_all_positions failed (attempt {attempt + 1}): {e}", "ERROR")
+            if not self.is_simulated:
+                time.sleep(1.0)  # let exit orders reach the broker's position book
+            try:
+                remaining = self.broker.get_positions()
+            except Exception as e:
+                self.log(f"Could not verify positions are flat: {e}", "CRITICAL")
+                return False
+            if not remaining:
+                return True
+            self.log(f"Positions still open after square-off attempt {attempt + 1}: "
+                     f"{[(p['symbol'], p['qty']) for p in remaining]}", "WARNING")
+        self.log("SQUARE-OFF INCOMPLETE — positions remain open. Check the broker terminal immediately!", "CRITICAL")
+        return False
+
+    def _execute(self, symbol: str, side: str, qty: int, reference_price: float) -> Optional[Dict[str, Any]]:
+        """
+        Place a market order and normalise the broker result.
+        Returns {"qty": filled_qty, "price": actual fill price} or None if nothing filled.
+        Works with both the mock broker (status COMPLETE) and Fyers (status FILLED/PARTIAL/...).
+        """
+        try:
+            result = self.broker.place_order(symbol, side, qty, "MARKET") or {}
+        except ConnectionError:
+            raise
+        except Exception as e:
+            result = {"status": "REJECTED", "message": str(e)}
+
+        status = str(result.get("status", "")).upper()
+        filled_qty = int(result.get("filled_qty", qty if status in ("COMPLETE", "FILLED") else 0) or 0)
+        if status in ("COMPLETE", "FILLED", "PARTIAL") and filled_qty > 0:
+            self.risk_manager.register_order_success()
+            price = float(result.get("avg_fill_price") or result.get("price") or reference_price)
+            if status == "PARTIAL":
+                self.log(f"Partial fill on {side} {symbol}: {filled_qty}/{qty} @ Rs. {price}", "WARNING")
+            return {"qty": filled_qty, "price": price}
+
+        self.log(f"Order {side} {qty} {symbol} not filled ({status or 'ERROR'}): {result.get('message', '')}", "ERROR")
+        if self.risk_manager.register_order_reject() and not self.halted_today:
+            # Set the halt directly (not via halt_for_day) — we may already be inside a closeout.
+            self.halted_today = True
+            self.halt_reason = f"{self.risk_manager.consecutive_rejects} consecutive order rejections"
+            self.log(f"CIRCUIT BREAKER: {self.halt_reason}. Flattening and halting for the day.", "CRITICAL")
+            self._flatten_and_verify()
+        return None
+
+    def _day_pnl(self, positions: List[Dict[str, Any]]) -> float:
+        """Total day P&L: broker-reported when available (source of truth), else internal."""
+        if hasattr(self.broker, "get_day_pnl"):
+            try:
+                broker_pnl = self.broker.get_day_pnl()
+                if broker_pnl is not None:
+                    return broker_pnl["total"]
+            except Exception as e:
+                logger.warning(f"Broker day P&L unavailable, using internal: {e}")
+        return self.risk_manager.realized_pnl + sum(pos["pnl"] for pos in positions)
 
     def reload_strategy_params(self):
         self.strategy_params = self.optimizer.load_optimized_params()
@@ -70,11 +182,18 @@ class MarginTradingAgent:
             self.traded_stocks = []
             self.daily_price_data = {}
             self.risk_manager.reset_daily()
+            self.halted_today = False
+            if not self.kill_switch:
+                self.halt_reason = ""
         self.last_date = current_date
+
+        # Kill switch / circuit breaker: no scanning, selection or trading.
+        if self.kill_switch or self.halted_today:
+            return
 
         # Formatted string for logs
         time_str = current_time.strftime("%H:%M")
-        
+
         # 1. Pre-Market Scan: 10 minutes before market open (9:05 AM)
         if time_str >= "09:05" and not self.pre_market_scanned:
             self.run_pre_market_scan()
@@ -90,16 +209,59 @@ class MarginTradingAgent:
             else:
                 self.run_daily_closeout(current_time)
 
+        if not self.is_simulated:
+            self._sync_risk_state(current_date)
+
+    def _sync_risk_state(self, current_date: datetime.date):
+        """
+        Persist trade count / realized P&L for live trading, and restore them after an
+        unplanned restart so daily limits still hold (Azure.md §2a).
+        """
+        day = current_date.isoformat()
+        rm = self.risk_manager
+        if self._risk_state_date != day:
+            self._risk_state_date = day
+            try:
+                with open(self._risk_state_path) as f:
+                    saved = json.load(f)
+                if saved.get("date") == day:
+                    rm.trade_count = max(rm.trade_count, int(saved.get("trade_count", 0)))
+                    if not rm.realized_pnl:
+                        rm.realized_pnl = float(saved.get("realized_pnl", 0.0))
+                    self.log(f"Restored today's risk state after restart: {rm.trade_count} trades, "
+                             f"realized P&L Rs. {rm.realized_pnl:.2f}.", "WARNING")
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                logger.error(f"Could not read risk state: {e}")
+        state = {"date": day, "trade_count": rm.trade_count, "realized_pnl": round(rm.realized_pnl, 2)}
+        if state != self._risk_state_saved:
+            try:
+                with open(self._risk_state_path, "w") as f:
+                    json.dump(state, f)
+                self._risk_state_saved = state
+            except Exception as e:
+                logger.error(f"Could not persist risk state: {e}")
+
     def run_pre_market_scan(self):
         self.log("Running Pre-Market scan (9:05 AM)...")
         # For mock broker, we get simulated news and movers.
         # For real brokers, we query sector performance or APIs.
         if hasattr(self.broker, "get_news_and_movers"):
-            res = self.broker.get_news_and_movers()
+            try:
+                res = self.broker.get_news_and_movers()
+            except Exception as e:
+                self.log(f"Pre-market movers scan failed: {e}", "ERROR")
+                res = {}
             self.watchlist_news = res.get("news", [])
             self.watchlist_movers = res.get("movers", [])
+        elif not self.is_simulated:
+            # Live broker without a movers API: no fabricated inputs on a real account.
+            # Selection falls back to scoring the broker's (or default) static universe.
+            self.watchlist_news = []
+            self.watchlist_movers = []
         else:
-            # Fallback for live brokers (mock news and movers if real API doesn't support them)
+            # Simulation-only placeholder news and movers
             self.watchlist_news = [
                 {"symbol": "INFY", "headline": "Infosys wins massive cloud deal", "sentiment": 0.7},
                 {"symbol": "RELIANCE", "headline": "Reliance green energy trial starts", "sentiment": 0.4},
@@ -125,8 +287,8 @@ class MarginTradingAgent:
         # Candidate pool: Union of top news and top movers symbols
         candidates = list(set([x["symbol"] for x in self.watchlist_news] + [x["symbol"] for x in self.watchlist_movers]))
         if not candidates:
-            # Fallback
-            candidates = ["INFY", "RELIANCE", "TATAMOTORS", "TCS", "HDFCBANK"]
+            # Fallback: the broker's configured universe (live) or a default basket
+            candidates = list(getattr(self.broker, "universe", None) or ["INFY", "RELIANCE", "TATAMOTORS", "TCS", "HDFCBANK"])
             
         scores = []
         for symbol in candidates:
@@ -142,16 +304,19 @@ class MarginTradingAgent:
                     # Score is volatility scaled by positive or negative strength
                     score = abs(trend) * volatility
                     scores.append((symbol, score, candles))
+            except ConnectionError:
+                raise
             except Exception as e:
                 logger.error(f"Failed scoring candidate {symbol}: {e}")
-                
+
         # Sort candidates by price action score descending
         scores.sort(key=lambda x: x[1], reverse=True)
-        
+
         # Pick top 2
         selected = [item[0] for item in scores[:2]]
-        if len(selected) < 2:
-            # Hardcoded fallbacks if we couldn't score enough
+        if len(selected) < 2 and self.is_simulated:
+            # Hardcoded fallbacks if we couldn't score enough (simulation only —
+            # live trading only trades symbols that were actually scored on real data)
             fallback_options = ["RELIANCE", "INFY", "TATAMOTORS"]
             for f in fallback_options:
                 if f not in selected:
@@ -166,23 +331,54 @@ class MarginTradingAgent:
             if item[0] in self.traded_stocks:
                 self.daily_price_data[item[0]] = item[2]
                 
-        self.log(f"Selected Top 2 Stocks for the day: {self.traded_stocks[0]} and {self.traded_stocks[1]}")
+        if self.traded_stocks:
+            self.log(f"Selected stocks for the day: {', '.join(self.traded_stocks)}")
+        else:
+            self.log("No candidates could be scored on real market data — no stocks selected today.", "WARNING")
+        if hasattr(self.broker, "subscribe_symbols") and self.traded_stocks:
+            self.broker.subscribe_symbols(self.traded_stocks)
         self.risk_manager.reset_daily()
         self.market_opened = True
         self.market_closed = False
 
     def run_live_trading(self, current_time: datetime.datetime):
-        # 1. First, check daily profit cap limit (Rs. 12,000)
+        # 0. Azure free-tier CPU quota: flatten while we still can, before Azure stops the app
+        if self.cpu_guard is not None and self.cpu_guard.should_halt_trading():
+            self.halt_for_day("Azure free-tier CPU quota nearly used up", current_time)
+            return
+
+        # 1. Daily P&L breakers: profit cap (Rs. 12,000) and max-loss circuit breaker
         positions = self.broker.get_positions()
-        unrealized_pnl = sum([pos["pnl"] for pos in positions])
-        
+
+        # Positions the risk manager doesn't know about (e.g. after an app restart) would
+        # otherwise have no trailing stop-loss. Adopt them.
+        for pos in positions:
+            if time.monotonic() - self._recent_exits.get(pos["symbol"], -1e9) < 15:
+                continue
+            if pos["symbol"] not in self.risk_manager.position_directions:
+                direction = "LONG" if pos["qty"] > 0 else "SHORT"
+                self.risk_manager.adopt_position(pos["symbol"], direction, pos["avg_price"],
+                                                 pos.get("current_price") or pos["avg_price"])
+                self.log(f"Adopted untracked {direction} position in {pos['symbol']} ({pos['qty']} @ "
+                         f"Rs. {pos['avg_price']}) — trailing stop-loss now active.", "WARNING", current_time)
+                if hasattr(self.broker, "subscribe_symbols"):
+                    self.broker.subscribe_symbols([pos["symbol"]])
+        day_pnl = self._day_pnl(positions)
+        unrealized_pnl = day_pnl - self.risk_manager.realized_pnl
+
         if self.risk_manager.check_daily_profit_limit(unrealized_pnl):
             self.log(f"Daily profit target exceeded Rs. {self.risk_manager.DAILY_PROFIT_LIMIT:.2f}! Closing all positions.", "WARNING")
-            self.run_daily_closeout(current_time)
+            self.run_daily_closeout(current_time, reason="Daily Profit Cap Hit")
+            return
+
+        if self.risk_manager.check_daily_loss_limit(day_pnl):
+            self.halt_for_day(f"Daily max loss Rs. {self.risk_manager.DAILY_MAX_LOSS:.2f} breached (P&L Rs. {day_pnl:.2f})", current_time)
             return
 
         # 2. Monitor existing positions for SL, TP, or Trend Reversal
         for pos in positions:
+            if self.halted_today or self.kill_switch:
+                return
             symbol = pos["symbol"]
             qty = pos["qty"]
             avg_price = pos["avg_price"]
@@ -215,21 +411,30 @@ class MarginTradingAgent:
                 
                 self.log(f"EXIT TRIGGER: {exit_reason} for {symbol} at Rs. {current_price}", "WARNING")
                 
-                # Execute broker close
+                # Execute broker close and use the ACTUAL fill price for P&L
                 order_type = "SELL" if qty > 0 else "BUY"
-                self.broker.place_order(symbol, order_type, abs(qty), "MARKET")
-                
-                # Calculate final trade profit
-                realized = (current_price - avg_price) * qty if qty > 0 else (avg_price - current_price) * abs(qty)
-                self.risk_manager.register_position_close(symbol, realized)
+                fill = self._execute(symbol, order_type, abs(qty), current_price)
+                if fill is None:
+                    self.log(f"Exit order for {symbol} did not fill — position still open, will retry next tick.", "CRITICAL")
+                    continue
+                exit_price = fill["price"]
+                closed_qty = fill["qty"] if qty > 0 else -fill["qty"]
+                self._recent_exits[symbol] = time.monotonic()
+
+                realized = (exit_price - avg_price) * closed_qty
+                if abs(closed_qty) == abs(qty):
+                    self.risk_manager.register_position_close(symbol, realized)
+                else:
+                    self.risk_manager.realized_pnl += realized
+                    self.log(f"Exit of {symbol} only partially filled ({abs(closed_qty)}/{abs(qty)}); remainder stays tracked.", "WARNING")
                 
                 # Save to database log
                 self.storage.save_trade({
                     "symbol": symbol,
                     "direction": "LONG" if qty > 0 else "SHORT",
                     "entry_price": avg_price,
-                    "exit_price": current_price,
-                    "qty": abs(qty),
+                    "exit_price": exit_price,
+                    "qty": abs(closed_qty),
                     "pnl": realized,
                     "exit_reason": exit_reason,
                     "timestamp": current_time.isoformat()
@@ -241,16 +446,19 @@ class MarginTradingAgent:
                 # 3. CONTRA POSITION TRIGGER:
                 # "in case of loss or trend reversal - close the active position and take a contra position to get back into profits"
                 # If we closed because of SL or Trend Reversal, take the opposite trade immediately.
-                if (trigger == "SL" or trend_reversal) and not self.risk_manager.is_trade_limit_reached():
+                if (trigger == "SL" or trend_reversal) and abs(closed_qty) == abs(qty) \
+                        and not self.risk_manager.is_trade_limit_reached():
                     contra_direction = "SHORT" if qty > 0 else "LONG"
                     self.log(f"Initiating CONTRA position ({contra_direction}) on {symbol} to recover losses.", "IMPORTANT")
-                    self.enter_position(symbol, contra_direction, current_price, current_time)
+                    self.enter_position(symbol, contra_direction, exit_price, current_time)
 
         # 4. Check for new entries on watchlist if trade limit not reached
         if not self.risk_manager.is_trade_limit_reached():
             active_symbols = [pos["symbol"] for pos in positions]
             
             for symbol in self.traded_stocks:
+                if self.halted_today or self.kill_switch:
+                    return
                 if symbol not in active_symbols:
                     # Retrieve latest price and run analysis
                     current_price = self.broker.get_quote(symbol)
@@ -274,9 +482,11 @@ class MarginTradingAgent:
                         self.enter_position(symbol, "SHORT", current_price, current_time)
 
     def enter_position(self, symbol: str, direction: str, price: float, current_time: datetime.datetime):
+        if self.kill_switch or self.halted_today:
+            return
         # Calculate quantity based on exposure limit (max Rs. 15,000 per stock to keep total exposure under Rs. 30,000)
         # Position sizing: quantity = allocation / price
-        allocation = 14500.0  # Rs. 14,500 exposure per trade
+        allocation = self.risk_manager.ALLOCATION_PER_TRADE
         qty = int(allocation / price)
         if qty <= 0:
             qty = 1
@@ -284,44 +494,72 @@ class MarginTradingAgent:
         # Verify exposure limit
         positions = self.broker.get_positions()
         if not self.risk_manager.check_exposure_limit(symbol, price, qty, positions):
-            self.log(f"Order skipped: Exposure would exceed Rs. 30,000 threshold.", "WARNING")
+            self.log(f"Order skipped: Exposure would exceed Rs. {self.risk_manager.MAX_EXPOSURE:,.0f} threshold.", "WARNING")
             return
-            
-        # Place order
-        order_type = "BUY" if direction == "LONG" else "SELL"
-        try:
-            self.broker.place_order(symbol, order_type, qty, "MARKET")
-            # Calculate recent volatility from daily price data for dynamic TP scaling
-            vol = 0.0
-            if symbol in self.daily_price_data and len(self.daily_price_data[symbol]) >= 5:
-                closes = [c["close"] for c in self.daily_price_data[symbol][-5:]]
-                if isinstance(closes[0], str):
-                    closes = [float(c) for c in closes]
-                avg = sum(closes) / len(closes)
-                mean_price = avg if avg != 0 else 1.0  # prevent division by zero
-                variances = [abs(c - mean_price) / mean_price for c in closes]
-                vol = sum(variances) / len(variances) * 100.0  # as percentage
-            self.risk_manager.register_position_open(symbol, direction, price, volatility_pct=vol)
-            self.log(f"Opened {direction} position: {qty} shares of {symbol} at Rs. {price}", "IMPORTANT")
-        except Exception as e:
-            self.log(f"Failed to place entry order for {symbol}: {e}", "ERROR")
 
-    def run_daily_closeout(self, current_time: datetime.datetime):
-        self.log(f"Closing open positions for daily square-off (3:25 PM / Target profit cap hit)...")
+        # Pre-trade funds/margin check (FyersAPI.md §6.1)
+        if hasattr(self.broker, "get_funds"):
+            try:
+                available = self.broker.get_funds()["available"]
+            except ConnectionError:
+                raise
+            except Exception as e:
+                self.log(f"Order skipped: could not fetch available funds ({e}).", "WARNING")
+                return
+            required = self.risk_manager.required_margin(qty, price)
+            if available < required:
+                self.log(f"Order skipped: insufficient margin for {qty} {symbol} "
+                         f"(need ~Rs. {required:,.2f}, available Rs. {available:,.2f}).", "WARNING")
+                return
+            
+        # Place order and register the position at the ACTUAL fill price
+        order_type = "BUY" if direction == "LONG" else "SELL"
+        fill = self._execute(symbol, order_type, qty, price)
+        if fill is None:
+            return
+        fill_price = fill["price"]
+
+        # Calculate recent volatility from daily price data for dynamic TP scaling
+        vol = 0.0
+        if symbol in self.daily_price_data and len(self.daily_price_data[symbol]) >= 5:
+            closes = [c["close"] for c in self.daily_price_data[symbol][-5:]]
+            if isinstance(closes[0], str):
+                closes = [float(c) for c in closes]
+            avg = sum(closes) / len(closes)
+            mean_price = avg if avg != 0 else 1.0  # prevent division by zero
+            variances = [abs(c - mean_price) / mean_price for c in closes]
+            vol = sum(variances) / len(variances) * 100.0  # as percentage
+        self.risk_manager.register_position_open(symbol, direction, fill_price, volatility_pct=vol)
+        self.log(f"Opened {direction} position: {fill['qty']} shares of {symbol} at Rs. {fill_price}", "IMPORTANT")
+
+    def run_daily_closeout(self, current_time: datetime.datetime, reason: Optional[str] = None):
+        self.log(f"Closing open positions for daily square-off ({reason or '3:25 PM'})...")
+        if reason is None:
+            reason = "End-of-day Squareoff" if current_time.strftime("%H:%M") >= "15:25" else "Daily Profit Cap Hit"
         
         # Get active positions to log and close
-        positions = self.broker.get_positions()
+        try:
+            positions = self.broker.get_positions()
+        except Exception as e:
+            self.log(f"Could not fetch positions for square-off: {e}", "CRITICAL")
+            positions = []
         for pos in positions:
             symbol = pos["symbol"]
             qty = pos["qty"]
             avg_price = pos["avg_price"]
-            current_price = self.broker.get_quote(symbol)
+            try:
+                current_price = self.broker.get_quote(symbol)
+            except Exception:
+                current_price = pos.get("current_price", avg_price)
             
-            # Place order to close
+            # Place order to close, P&L from the actual fill
             order_type = "SELL" if qty > 0 else "BUY"
             try:
-                self.broker.place_order(symbol, order_type, abs(qty), "MARKET")
-                pnl = (current_price - avg_price) * qty if qty > 0 else (avg_price - current_price) * abs(qty)
+                fill = self._execute(symbol, order_type, abs(qty), current_price)
+                if fill is None:
+                    continue  # the flatten-and-verify below retries
+                closed_qty = fill["qty"] if qty > 0 else -fill["qty"]
+                pnl = (fill["price"] - avg_price) * closed_qty
                 self.risk_manager.register_position_close(symbol, pnl)
                 
                 # Save trade log
@@ -329,26 +567,32 @@ class MarginTradingAgent:
                     "symbol": symbol,
                     "direction": "LONG" if qty > 0 else "SHORT",
                     "entry_price": avg_price,
-                    "exit_price": current_price,
-                    "qty": abs(qty),
+                    "exit_price": fill["price"],
+                    "qty": abs(closed_qty),
                     "pnl": pnl,
-                    "exit_reason": "End-of-day Squareoff" if current_time.strftime("%H:%M") >= "15:25" else "Daily Profit Cap Hit",
+                    "exit_reason": reason,
                     "timestamp": current_time.isoformat()
                 })
             except Exception as e:
                 self.log(f"Error squaring off {symbol}: {e}", "ERROR")
 
-        # Clear active flags
-        self.broker.close_all_positions() # safety back-up
+        # Safety back-up: flatten anything left (incl. broker auto-square-off races) and verify flat
+        self._flatten_and_verify()
         self.risk_manager.peak_prices.clear()
         self.risk_manager.position_directions.clear()
+        if hasattr(self.broker, "unsubscribe_symbols") and self.traded_stocks:
+            self.broker.unsubscribe_symbols(self.traded_stocks)
         
         self.market_closed = True
         self.market_opened = False
         self.update_summary_metrics()
         self.log("Daily trade operations completed. Positions squared off.")
         
-        # 5. Nightly Self-Improvement optimization
+        # 5. Nightly Self-Improvement optimization (optional; skipped if the CPU quota is low)
+        min_cpu = float(os.environ.get("OPTIMIZER_MIN_CPU_SEC", 900))
+        if self.cpu_guard is not None and self.cpu_guard.remaining_seconds() < min_cpu:
+            self.log("Skipping parameter optimization: not enough Azure CPU quota left today.", "WARNING")
+            return
         self.log("Running self-improvement engine: Optimising parameters for next session...")
         trades = self.storage.get_trades()
         optimized = self.optimizer.run_optimization(trades, self.daily_price_data)

@@ -232,22 +232,22 @@ Add a `DRY_RUN` flag (env var) to `FyersConnector`:
 ## 9. Go-Live checklist
 
 Connection & auth
-- [ ] `fyers-apiv3` added to [`requirements.txt`](requirements.txt) and installed (G1)
+- [x] `fyers-apiv3` added to [`requirements.txt`](requirements.txt) and installed (G1)
 - [ ] App created at myapi.fyers.in; redirect URI matches deployed callback (3.1)
-- [ ] OAuth login + auth_code → access_token flow working (3.2–3.3)
+- [x] OAuth login + auth_code → access_token flow working (3.2–3.3)
 - [ ] Daily expiry handled: pre-open re-auth gate + refresh_token + token in Key Vault (3.4–3.5)
 
 Data & orders
-- [ ] Quote parser fixed (`res["d"]`) and verified against live quotes (G3 / 4.1)
+- [x] Quote parser fixed (`res["d"]`) and verified against live quotes (G3 / 4.1)
 - [ ] WebSocket price feed live; per-second loop makes 0 REST calls in steady state (4.2 / 5)
-- [ ] Order reconciliation against orderbook/order_ws; actual fill price used for P&L (G6 / 6.2–6.3)
-- [ ] Funds/margin check before entries; real balance in `/api/state` (G5 / 6.1)
-- [ ] Square-off verified flat after 15:25; handles broker auto-squareoff (6.4)
+- [x] Order reconciliation against orderbook/order_ws; actual fill price used for P&L (G6 / 6.2–6.3)
+- [x] Funds/margin check before entries; real balance in `/api/state` (G5 / 6.1)
+- [x] Square-off verified flat after 15:25; handles broker auto-squareoff (6.4)
 
 Safety
-- [ ] Kill switch endpoint + daily max-loss circuit breaker + reject breaker (G9 / 6.5)
-- [ ] Real (or deterministic) watchlist — no hardcoded fake news in live mode (G7 / 7)
-- [ ] Timezone forced to IST; weekend/holiday guard (G8 / 8.1)
+- [x] Kill switch endpoint + daily max-loss circuit breaker + reject breaker (G9 / 6.5)
+- [x] Real (or deterministic) watchlist — no hardcoded fake news in live mode (G7 / 7)
+- [x] Timezone forced to IST; weekend/holiday guard (G8 / 8.1)
 
 Validation
 - [ ] Full-day DRY_RUN session clean (8.2)
@@ -268,3 +268,40 @@ Validation
 8. **8.2** — DRY_RUN validation → small-capital live → full size.
 
 Once §9 is fully green, the Fyers side is **trading-ready**. Hosting is covered in Azure.md.
+
+---
+
+## 11. Implementation status (code complete — validation pending)
+
+Ticked items in §9 are implemented in code and covered by offline tests against a stubbed SDK. Still **manual / outstanding**: Fyers app setup (3.1), WebSocket + order flow verified against the *real* Fyers API, token in Key Vault (via env-var references), the DRY_RUN day, and the small-capital day.
+
+| Area | Where |
+|---|---|
+| OAuth login URL / callback (with single-use `state`), refresh_token + PIN | `brokers/fyers_auth.py`, `GET /api/fyers/login-url`, `GET /api/fyers/callback`, `POST /api/fyers/refresh` |
+| Pre-open gate (08:45 IST), auto-refresh, retry every 5 min if the token dies mid-day | `main.py` → `live_gate_allows_trading()` |
+| Rate limiter, throttle backoff, auth-error → `connected=False` | `FyersConnector._call()` |
+| WebSocket LTP cache with REST fallback | `brokers/fyers_ws.py` |
+| Fill reconciliation (unfilled orders are cancelled at the timeout) | `FyersConnector.place_order()` / `_await_fill()` |
+| Kill switch / re-arm, daily max-loss and reject breakers | `POST /api/kill`, `POST /api/rearm`, `core/agent.py`, `core/risk_manager.py` |
+| IST clock, weekend + NSE holiday guard | `core/market_time.py` |
+| Live movers (one batched `quotes()` call over a 48-stock universe), no fake news | `FyersConnector.get_news_and_movers()` |
+
+**Environment variables**
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `FYERS_APP_ID`, `FYERS_SECRET_ID`, `FYERS_REDIRECT_URI` | — | App credentials (can also be entered in the dashboard) |
+| `FYERS_PIN`, `FYERS_REFRESH_TOKEN`, `FYERS_ACCESS_TOKEN` | — | Optional seeds for unattended refresh (use Key Vault references) |
+| `DRY_RUN` | `false` | Real data, simulated fills on an in-memory paper book |
+| `DAILY_MAX_LOSS` | `3000` | Rs. loss that flattens and halts for the day |
+| `MAX_CONSECUTIVE_REJECTS` | `3` | Rejects in a row that flatten and halt for the day |
+| `ALLOCATION_PER_TRADE`, `MAX_EXPOSURE` | `14500`, `30000` | Position sizing (reduce these for the first live day) |
+| `INTRADAY_LEVERAGE` | `5` | Used for the pre-trade margin estimate |
+| `LIVE_UNIVERSE`, `LIVE_MOVERS_COUNT` | built-in, `10` | Symbols scanned for movers |
+| `FYERS_GATE_TIME` | `08:45` | When the daily session check runs (IST) |
+| `NSE_HOLIDAYS` | — | Extra holiday dates, comma-separated `YYYY-MM-DD` (or `<DATA_DIR>/nse_holidays.json`) |
+| `FYERS_MAX_REQ_PER_SEC` / `_PER_MIN` | `8` / `180` | Client-side rate limits |
+
+> DRY_RUN deviation from §8.2: positions come from the paper book, not Fyers. Otherwise the agent would never see its simulated positions and would keep re-entering.
+>
+> The holiday list covers 2026 only. Add 2027 when NSE publishes its circular (usually in December).

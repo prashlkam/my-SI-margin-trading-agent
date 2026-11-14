@@ -1,0 +1,41 @@
+# Free uptime monitor + wake-up for the Azure Free (F1) app (Azure.md §10).
+#
+# * Wakes the app before the market opens (F1 has no "Always On"; the app unloads when idle).
+# * Checks /api/health every 10 minutes on weekdays, 07:30-16:30 IST.
+# * A failing run makes GitHub email you (Settings > Notifications > Actions:
+#   "Send notifications for failed workflows only"). Free: public repos have unlimited minutes.
+#
+# Setup: repository variable AZURE_WEBAPP_URL = https://<app>.azurewebsites.net
+# Note: GitHub may delay scheduled runs by several minutes under load.
+
+name: Health monitor
+
+on:
+  schedule:
+    - cron: "*/10 2-10 * * 1-5"   # 02:00-10:59 UTC = 07:30-16:29 IST, Mon-Fri
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check app health
+        env:
+          URL: ${{ vars.AZURE_WEBAPP_URL }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::warning::Repository variable AZURE_WEBAPP_URL is not set - nothing to monitor."
+            exit 0
+          fi
+          # Cold starts on F1 can take a while: retry for up to ~3 minutes.
+          for attempt in 1 2 3 4 5 6; do
+            code=$(curl -s -o body.json -w '%{http_code}' --max-time 30 "$URL/api/health" || echo 000)
+            echo "attempt $attempt: HTTP $code"
+            if [ "$code" = "200" ]; then cat body.json; echo; exit 0; fi
+            if [ "$code" = "503" ]; then break; fi   # app is up but reporting a real problem
+            sleep 30
+          done
+          echo "::error::Trading agent unhealthy (HTTP $code). 403 = Azure free-tier quota exceeded (app stopped)."
+          cat body.json 2>/dev/null || true
+          exit 1
