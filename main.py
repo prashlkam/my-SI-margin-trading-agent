@@ -5,9 +5,10 @@ import os
 import hashlib
 import json
 import secrets
+import time
 from typing import Dict, Any, List, Optional
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Response, Cookie, Depends
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel
 
 # Import agent components
@@ -16,7 +17,9 @@ from brokers.mock import MockBrokerConnector
 from brokers.zerodha import ZerodhaConnector
 from brokers.icicidirect import ICICIDirectConnector
 from brokers.fyers import FyersConnector
+from brokers import fyers_auth
 from core.agent import MarginTradingAgent
+from core.market_time import now_ist, is_trading_day, load_extra_holidays
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -49,8 +52,25 @@ mock_broker.set_speed(simulation_speed)  # Ensure speed is applied on startup
 credentials_cache = {
     "zerodha": {"api_key": "", "access_token": ""},
     "icicidirect": {"api_key": "", "secret_key": "", "session_token": ""},
-    "fyers": {"client_id": "", "access_token": ""}
+    # Seeded from env so App Service settings / Key Vault references work (FyersAPI.md §3.5).
+    # Tokens live only in memory — never in users.json or git.
+    "fyers": {
+        "app_id": os.environ.get("FYERS_APP_ID", ""),
+        "secret_id": os.environ.get("FYERS_SECRET_ID", ""),
+        "redirect_uri": os.environ.get("FYERS_REDIRECT_URI", ""),
+        "pin": os.environ.get("FYERS_PIN", ""),
+        "access_token": os.environ.get("FYERS_ACCESS_TOKEN", ""),
+        "refresh_token": os.environ.get("FYERS_REFRESH_TOKEN", ""),
+    }
 }
+
+# Fyers OAuth `state` values issued by /api/fyers/login-url -> expiry (epoch seconds)
+fyers_oauth_states: Dict[str, float] = {}
+# Pre-open session gate bookkeeping
+FYERS_GATE_TIME = os.environ.get("FYERS_GATE_TIME", "08:45")
+fyers_gate_passed_date: Optional[datetime.date] = None
+fyers_last_reauth_attempt = 0.0
+extra_holidays = load_extra_holidays(DATA_DIR)
 
 # User Database Setup
 USERS_FILE = os.path.join(DATA_DIR, "users.json")
@@ -92,29 +112,78 @@ backtest_status = {
 
 last_backtest_params = None  # Stores last backtest dates for replay
 
+def connect_fyers_from_cache() -> bool:
+    creds = credentials_cache["fyers"]
+    return bool(creds.get("access_token")) and fyers_broker.connect(creds)
+
+
+def ensure_fyers_session() -> bool:
+    """
+    Pre-open re-auth gate (FyersAPI.md §3.4): verify the token, else try the
+    refresh_token + PIN flow. Returns True if Fyers is usable.
+    """
+    if fyers_broker.check_session():
+        return True
+    creds = credentials_cache["fyers"]
+    if creds.get("refresh_token") and creds.get("pin"):
+        try:
+            creds["access_token"] = fyers_auth.refresh_access_token(
+                creds["app_id"], creds["secret_id"], creds["refresh_token"], creds["pin"])
+            if fyers_broker.connect(creds):
+                agent.log("Fyers access token refreshed via refresh_token.", "WARNING")
+                return True
+        except Exception as e:
+            agent.log(f"Fyers token refresh failed: {e}", "ERROR")
+    agent.log("CRITICAL: Fyers token expired — re-authenticate via 'Login with Fyers'. Trading is paused.", "CRITICAL")
+    return False
+
+
+def live_gate_allows_trading(now: datetime.datetime) -> bool:
+    """Trading-day guard + Fyers session gate for live brokers."""
+    global fyers_gate_passed_date, fyers_last_reauth_attempt
+    if not is_trading_day(now.date(), extra_holidays):
+        return False
+    if active_broker is fyers_broker:
+        today = now.date()
+        if fyers_gate_passed_date != today and now.strftime("%H:%M") >= FYERS_GATE_TIME:
+            if time.monotonic() - fyers_last_reauth_attempt >= 300:
+                fyers_last_reauth_attempt = time.monotonic()
+                if ensure_fyers_session():
+                    fyers_gate_passed_date = today
+                    agent.log(f"Fyers pre-open session check passed for {today}.")
+            return fyers_gate_passed_date == today and fyers_broker.connected
+        if not fyers_broker.connected:
+            # Token died mid-session: retry refresh every 5 minutes, don't trade meanwhile.
+            if time.monotonic() - fyers_last_reauth_attempt >= 300:
+                fyers_last_reauth_attempt = time.monotonic()
+                ensure_fyers_session()
+            return fyers_broker.connected
+    return True
+
+
 # Background worker loop
 async def trading_agent_loop():
     global is_running, simulation_speed, active_broker, agent
     last_tick_time = datetime.datetime.now()
-    
+
     while True:
         try:
             if is_running:
                 now = datetime.datetime.now()
                 delta_seconds = (now - last_tick_time).total_seconds()
-                
+
                 # Determine time to feed into agent
                 if isinstance(active_broker, MockBrokerConnector):
                     # For Mock broker, update prices and clock according to speed multiplier
                     active_broker.update_prices(delta_seconds)
-                    agent_time = active_broker.virtual_time
+                    agent.tick(active_broker.virtual_time)
                 else:
-                    # For real brokers, use actual system time
-                    agent_time = now
-                
-                # Perform agent tick
-                agent.tick(agent_time)
-                
+                    # Real brokers: always IST, regardless of the host's timezone (FyersAPI.md §8.1).
+                    # Broker REST calls block, so run the tick off the event loop.
+                    agent_time = now_ist()
+                    if await asyncio.to_thread(live_gate_allows_trading, agent_time):
+                        await asyncio.to_thread(agent.tick, agent_time)
+
                 # Update loop timestamp
                 last_tick_time = now
             else:
@@ -137,6 +206,7 @@ async def shutdown_event():
     """Graceful shutdown: flush storage buffers and log final state."""
     logger.info("Shutdown signal received. Flushing data buffers...")
     try:
+        fyers_broker.disconnect()
         if hasattr(storage, 'buffer') and storage.buffer:
             storage.flush_buffer()
         if hasattr(agent, 'update_summary_metrics'):
@@ -358,7 +428,11 @@ def get_backtest_status(username: str = Depends(verify_auth)):
 # Trading API Endpoints (Protected by Session Auth)
 @app.get("/api/state")
 def get_state(username: str = Depends(verify_auth)):
-    positions = active_broker.get_positions()
+    try:
+        positions = active_broker.get_positions()
+    except Exception as e:
+        logger.warning(f"/api/state could not fetch positions: {e}")
+        positions = []
     unrealized_pnl = sum([pos["pnl"] for pos in positions])
     
     # Calculate mock exposure
@@ -371,7 +445,7 @@ def get_state(username: str = Depends(verify_auth)):
     if isinstance(active_broker, MockBrokerConnector):
         current_time = active_broker.virtual_time.strftime("%Y-%m-%d %H:%M:%S")
     else:
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = now_ist().strftime("%Y-%m-%d %H:%M:%S")
         
     return {
         "virtual_time": current_time,
@@ -379,6 +453,16 @@ def get_state(username: str = Depends(verify_auth)):
         "speed_multiplier": simulation_speed,
         "active_broker": broker_type,
         "balance": getattr(active_broker, "balance", 0.0),
+        "kill_switch": agent.kill_switch,
+        "halted_today": agent.halted_today,
+        "halt_reason": agent.halt_reason,
+        "daily_max_loss": agent.risk_manager.DAILY_MAX_LOSS,
+        "fyers": {
+            "connected": fyers_broker.connected,
+            "dry_run": fyers_broker.dry_run,
+            "configured": bool(credentials_cache["fyers"].get("app_id") and credentials_cache["fyers"].get("secret_id")),
+            "last_auth_error": fyers_broker.last_auth_error,
+        },
         "exposure": exposure,
         "unrealized_pnl": unrealized_pnl,
         "realized_pnl": agent.risk_manager.realized_pnl,
@@ -444,10 +528,8 @@ def select_broker(data: BrokerSelectModel, username: str = Depends(verify_auth))
                 raise HTTPException(status_code=400, detail="ICICI Breeze API not connected. Please save valid credentials first.")
         active_broker = icici_broker
     elif name == "fyers":
-        if not fyers_broker.connected:
-            success = fyers_broker.connect(credentials_cache["fyers"])
-            if not success:
-                raise HTTPException(status_code=400, detail="Fyers API not connected. Please save valid credentials first.")
+        if not fyers_broker.connected and not connect_fyers_from_cache():
+            raise HTTPException(status_code=400, detail="Fyers API not connected. Save your App ID / Secret, then use 'Login with Fyers'.")
         active_broker = fyers_broker
     else:
         raise HTTPException(status_code=400, detail=f"Unknown broker name: {data.broker_name}")
@@ -461,6 +543,9 @@ def save_credentials(data: CredentialsModel, username: str = Depends(verify_auth
     if broker not in credentials_cache:
         raise HTTPException(status_code=400, detail="Invalid broker choice.")
         
+    if broker == "fyers":
+        return save_fyers_credentials(data.keys)
+
     credentials_cache[broker] = data.keys
     
     # Try connecting instantly
@@ -469,14 +554,97 @@ def save_credentials(data: CredentialsModel, username: str = Depends(verify_auth
         success = zerodha_broker.connect(data.keys)
     elif broker == "icicidirect":
         success = icici_broker.connect(data.keys)
-    elif broker == "fyers":
-        success = fyers_broker.connect(data.keys)
         
     if success:
         agent.log(f"Successfully authenticated and saved credentials for {broker.upper()}.", "INFO")
         return {"status": "success", "message": "Successfully authenticated."}
     else:
         raise HTTPException(status_code=400, detail=f"Authentication failed for {broker.upper()}. Check credentials.")
+
+# ================= Fyers OAuth (FyersAPI.md §3) =================
+def _fyers_login_url() -> str:
+    creds = credentials_cache["fyers"]
+    if not (creds.get("app_id") and creds.get("secret_id") and creds.get("redirect_uri")):
+        raise HTTPException(status_code=400, detail="Save Fyers App ID, Secret ID and Redirect URI first.")
+    now = time.time()
+    for st, exp in list(fyers_oauth_states.items()):
+        if exp < now:
+            fyers_oauth_states.pop(st, None)
+    state = secrets.token_urlsafe(16)
+    fyers_oauth_states[state] = now + 600  # valid for 10 minutes
+    return fyers_auth.build_login_url(creds["app_id"], creds["secret_id"], creds["redirect_uri"], state)
+
+
+def save_fyers_credentials(keys: Dict[str, str]):
+    creds = credentials_cache["fyers"]
+    # Accept legacy 'client_id' as the App ID; merge so a live token isn't wiped by a partial save.
+    if keys.get("client_id") and not keys.get("app_id"):
+        keys["app_id"] = keys["client_id"]
+    for field in ("app_id", "secret_id", "redirect_uri", "pin", "access_token", "refresh_token"):
+        if keys.get(field):
+            creds[field] = keys[field].strip()
+
+    if keys.get("access_token"):
+        if fyers_broker.connect(creds):
+            agent.log("Successfully authenticated with FYERS using a supplied access token.", "INFO")
+            return {"status": "success", "message": "Successfully authenticated."}
+        raise HTTPException(status_code=400, detail="Fyers rejected the access token. Use 'Login with Fyers' instead.")
+
+    return {"status": "login_required", "message": "Credentials saved. Complete the Fyers login.", "login_url": _fyers_login_url()}
+
+
+@app.get("/api/fyers/login-url")
+def fyers_login_url(username: str = Depends(verify_auth)):
+    return {"login_url": _fyers_login_url()}
+
+
+@app.get("/api/fyers/callback")
+def fyers_callback(auth_code: Optional[str] = None, state: Optional[str] = None, s: Optional[str] = None,
+                   message: Optional[str] = None, username: str = Depends(verify_auth)):
+    """Fyers redirects here after login: ?s=ok&auth_code=...&state=..."""
+    if not state or fyers_oauth_states.pop(state, 0) < time.time():
+        return RedirectResponse("/?fyers_error=invalid_or_expired_state", status_code=303)
+    if not auth_code or (s and s != "ok"):
+        agent.log(f"Fyers login was not completed: {message or s}", "ERROR")
+        return RedirectResponse("/?fyers_error=login_failed", status_code=303)
+
+    creds = credentials_cache["fyers"]
+    try:
+        tokens = fyers_auth.exchange_auth_code(creds["app_id"], creds["secret_id"], creds["redirect_uri"], auth_code)
+    except Exception as e:
+        agent.log(f"Fyers token exchange failed: {e}", "ERROR")
+        return RedirectResponse("/?fyers_error=token_exchange_failed", status_code=303)
+    creds.update(tokens)
+    if not fyers_broker.connect(creds):
+        return RedirectResponse("/?fyers_error=connect_failed", status_code=303)
+
+    global fyers_gate_passed_date
+    fyers_gate_passed_date = None  # re-run the pre-open check with the fresh token
+    agent.log("Fyers login complete — access token issued and connector authenticated.", "INFO")
+    return RedirectResponse("/?fyers=connected", status_code=303)
+
+
+@app.post("/api/fyers/refresh")
+def fyers_refresh(username: str = Depends(verify_auth)):
+    if ensure_fyers_session():
+        return {"status": "success", "connected": True}
+    raise HTTPException(status_code=400, detail="Fyers session invalid and refresh failed. Use 'Login with Fyers'.")
+
+
+# ================= Kill switch (FyersAPI.md §6.5) =================
+@app.post("/api/kill")
+def kill_switch(username: str = Depends(verify_auth)):
+    global is_running
+    is_running = False
+    agent.engage_kill_switch(f"Kill switch pressed by {username}")
+    return {"status": "killed", "is_running": is_running}
+
+
+@app.post("/api/rearm")
+def rearm(username: str = Depends(verify_auth)):
+    agent.rearm()
+    return {"status": "armed", "is_running": is_running}
+
 
 @app.post("/api/reset-simulation")
 def reset_simulation(username: str = Depends(verify_auth)):

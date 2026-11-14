@@ -1,4 +1,5 @@
 import logging
+import os
 from typing import Dict, List, Any
 
 logger = logging.getLogger(__name__)
@@ -12,10 +13,18 @@ class RiskManager:
         self.TP_MAX = 0.20               # Maximum take-profit threshold (more the better)
         self.MAX_TRADES_DAILY = 12       # Less than 12 trades
         self.DAILY_PROFIT_LIMIT = 12000.0 # Rs. 12,000 cap
+        # Circuit breakers (FyersAPI.md §6.5). Override via env for live trading.
+        self.DAILY_MAX_LOSS = float(os.environ.get("DAILY_MAX_LOSS", 3000.0))   # Rs. loss that halts the day
+        self.MAX_CONSECUTIVE_REJECTS = int(os.environ.get("MAX_CONSECUTIVE_REJECTS", 3))
+        # Position sizing and margin (reduce for the first small-capital live session, FyersAPI.md §8.2)
+        self.ALLOCATION_PER_TRADE = float(os.environ.get("ALLOCATION_PER_TRADE", 14500.0))
+        self.MAX_EXPOSURE = float(os.environ.get("MAX_EXPOSURE", self.MAX_EXPOSURE))
+        self.INTRADAY_LEVERAGE = float(os.environ.get("INTRADAY_LEVERAGE", 5.0))  # NSE MIS equity margin ~20%
         
         # State tracking
         self.trade_count = 0
         self.realized_pnl = 0.0
+        self.consecutive_rejects = 0
         # Tracks peak prices for trailing stop loss
         # Key: symbol, Value: float (highest price reached for LONG, lowest for SHORT)
         self.peak_prices: Dict[str, float] = {}
@@ -29,6 +38,7 @@ class RiskManager:
     def reset_daily(self):
         self.trade_count = 0
         self.realized_pnl = 0.0
+        self.consecutive_rejects = 0
         self.peak_prices.clear()
         self.position_directions.clear()
         self.tp_targets.clear()
@@ -161,3 +171,22 @@ class RiskManager:
             logger.warning(f"Daily profit target reached! PnL: Rs. {total_pnl:.2f}, Target: Rs. {self.DAILY_PROFIT_LIMIT:.2f}. Halting operations.")
             return True
         return False
+
+    def check_daily_loss_limit(self, total_pnl: float) -> bool:
+        """True if the day's total P&L (realized + unrealized) has hit the max-loss breaker."""
+        if total_pnl <= -abs(self.DAILY_MAX_LOSS):
+            logger.critical(f"Daily max-loss breaker hit! PnL: Rs. {total_pnl:.2f}, Limit: -Rs. {abs(self.DAILY_MAX_LOSS):.2f}.")
+            return True
+        return False
+
+    def register_order_reject(self) -> bool:
+        """Count a rejected order. Returns True when the consecutive-reject breaker trips."""
+        self.consecutive_rejects += 1
+        return self.consecutive_rejects >= self.MAX_CONSECUTIVE_REJECTS
+
+    def register_order_success(self):
+        self.consecutive_rejects = 0
+
+    def required_margin(self, qty: int, price: float) -> float:
+        """Approximate intraday margin for an order (notional / leverage)."""
+        return abs(qty * price) / max(self.INTRADAY_LEVERAGE, 1.0)

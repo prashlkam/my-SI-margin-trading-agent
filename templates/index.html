@@ -824,6 +824,9 @@
         </div>
     </header>
 
+    <!-- Kill switch / circuit breaker banner -->
+    <div id="halt-banner" style="display:none; margin: 12px 24px 0; padding: 10px 16px; border-radius: 10px; background: var(--color-loss); color: #fff; font-weight: 700; font-size: 13px; letter-spacing: 0.3px;"></div>
+
     <!-- Dashboard Main View Grid -->
     <div class="dashboard-container">
         
@@ -1027,13 +1030,26 @@
 
                         <div id="fields-fyers" class="credentials-fields" style="display:none;">
                             <div class="input-group" style="margin-bottom: 10px;">
-                                <label>Client ID</label>
-                                <input type="password" id="f-client-id" placeholder="Enter App Client ID">
+                                <label>App ID</label>
+                                <input type="text" id="f-app-id" placeholder="e.g. XXXXXXXX-100" autocomplete="off">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Secret ID</label>
+                                <input type="password" id="f-secret-id" placeholder="App Secret from myapi.fyers.in" autocomplete="off">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>Redirect URI</label>
+                                <input type="text" id="f-redirect-uri" placeholder="https://your-app/api/fyers/callback" autocomplete="off">
+                            </div>
+                            <div class="input-group" style="margin-bottom: 10px;">
+                                <label>PIN (optional, enables daily token refresh)</label>
+                                <input type="password" id="f-pin" placeholder="4-digit Fyers PIN" autocomplete="off">
                             </div>
                             <div class="input-group">
-                                <label>Access Token</label>
-                                <input type="password" id="f-access-token" placeholder="Enter Access Token">
+                                <label>Access Token (optional, skips login)</label>
+                                <input type="password" id="f-access-token" placeholder="Leave blank to log in with Fyers" autocomplete="off">
                             </div>
+                            <div id="fyers-status" style="font-size: 12px; margin-top: 8px; opacity: 0.8;"></div>
                         </div>
                     </div>
 
@@ -1108,6 +1124,16 @@
                 <button class="btn btn-sm" id="play-pause-btn" onclick="toggleRun()">
                     <i data-lucide="pause" id="play-pause-icon"></i>
                     <span id="play-pause-text">Pause</span>
+                </button>
+
+                <button class="btn btn-sm btn-danger" id="kill-btn" onclick="killSwitch()" title="Flatten all positions and block trading">
+                    <i data-lucide="octagon-x"></i>
+                    Kill
+                </button>
+
+                <button class="btn btn-sm btn-secondary" id="rearm-btn" onclick="rearmAgent()" style="display:none;">
+                    <i data-lucide="shield-check"></i>
+                    Re-arm
                 </button>
 
                 <button class="btn btn-sm btn-secondary" onclick="resetSimulation()">
@@ -1281,6 +1307,23 @@
         function updateUI(state, trades, logs, metrics) {
             // Update time clock
             document.getElementById('sim-time').textContent = state.virtual_time.split(" ")[1] || state.virtual_time;
+
+            // Kill switch / circuit breaker state
+            const banner = document.getElementById('halt-banner');
+            if (state.kill_switch || state.halted_today) {
+                banner.textContent = (state.kill_switch ? 'KILL SWITCH ENGAGED' : 'HALTED FOR TODAY') +
+                    (state.halt_reason ? ' — ' + state.halt_reason : '');
+                banner.style.display = 'block';
+            } else {
+                banner.style.display = 'none';
+            }
+            document.getElementById('rearm-btn').style.display = state.kill_switch ? '' : 'none';
+            if (state.fyers) {
+                const fs = document.getElementById('fyers-status');
+                fs.textContent = state.fyers.connected
+                    ? 'Fyers: connected' + (state.fyers.dry_run ? ' (DRY RUN — orders simulated)' : ' (LIVE orders)')
+                    : (state.fyers.configured ? 'Fyers: not logged in — click Save & Connect to log in' : '');
+            }
             
             // Play pause status
             const playPauseBtn = document.getElementById('play-pause-btn');
@@ -1483,6 +1526,23 @@
         }
 
         // Toggle Running status
+        async function killSwitch() {
+            if (!confirm('KILL SWITCH: square off ALL positions and block trading until re-armed?')) return;
+            try {
+                const res = await fetch('/api/kill', { method: 'POST' });
+                if (!res.ok) alert('Kill switch request failed — check the broker terminal!');
+                fetchDashboardData();
+            } catch (err) { alert('Kill switch request failed — check the broker terminal!'); }
+        }
+
+        async function rearmAgent() {
+            if (!confirm('Re-arm the agent? Trading resumes once you also press Resume.')) return;
+            try {
+                await fetch('/api/rearm', { method: 'POST' });
+                fetchDashboardData();
+            } catch (err) { console.error(err); }
+        }
+
         async function toggleRun() {
             try {
                 await fetch('/api/toggle-run', { method: 'POST' });
@@ -1572,8 +1632,11 @@
                 };
             } else if (broker === 'fyers') {
                 keys = {
-                    client_id: document.getElementById('f-client-id').value,
-                    access_token: document.getElementById('f-access-token').value
+                    app_id: document.getElementById('f-app-id').value.trim(),
+                    secret_id: document.getElementById('f-secret-id').value.trim(),
+                    redirect_uri: document.getElementById('f-redirect-uri').value.trim(),
+                    pin: document.getElementById('f-pin').value.trim(),
+                    access_token: document.getElementById('f-access-token').value.trim()
                 };
             }
 
@@ -1585,6 +1648,12 @@
                 });
                 
                 if (res.ok) {
+                    const data = await res.json();
+                    if (data.status === 'login_required' && data.login_url) {
+                        // Fyers OAuth: log in at Fyers, which redirects back to /api/fyers/callback
+                        window.location.href = data.login_url;
+                        return;
+                    }
                     alert("Credentials saved. Connected successfully!");
                     confirmBrokerSelection(broker);
                 } else {
@@ -1840,6 +1909,19 @@
                 alert("Error connecting to server.");
             }
         }
+
+        // Fyers OAuth callback result (?fyers=connected / ?fyers_error=...)
+        (function handleFyersRedirect() {
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('fyers') === 'connected') {
+                history.replaceState(null, '', '/');
+                document.getElementById('broker-select').value = 'fyers';
+                confirmBrokerSelection('fyers');
+            } else if (params.get('fyers_error')) {
+                alert('Fyers login failed: ' + params.get('fyers_error').replace(/_/g, ' '));
+                history.replaceState(null, '', '/');
+            }
+        })();
 
         // On page load, verify authentication session
         checkAuth();
