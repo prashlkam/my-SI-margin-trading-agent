@@ -52,6 +52,9 @@ class MarginTradingAgent:
         # symbol -> monotonic time of last exit fill; guards against re-adopting a position
         # the broker's position book hasn't caught up on yet
         self._recent_exits: Dict[str, float] = {}
+        # Kill switch survives restarts and container hand-overs (core/trader_lock.py)
+        self._kill_switch_path = os.path.join(config_dir, "kill_switch.json")
+        self.load_kill_switch()
 
         # Log system status
         self.log("Margin Trading Agent Initialised in Standby Mode.")
@@ -79,6 +82,7 @@ class MarginTradingAgent:
         """Flatten everything and block all trading until rearm() is called."""
         self.kill_switch = True
         self.halt_reason = reason
+        self._save_kill_switch()
         self.log(f"KILL SWITCH ENGAGED: {reason}. Flattening all positions.", "CRITICAL")
         self._flatten_and_verify()
         self.risk_manager.peak_prices.clear()
@@ -88,7 +92,29 @@ class MarginTradingAgent:
     def rearm(self):
         self.kill_switch = False
         self.halt_reason = ""
+        self._save_kill_switch()
         self.log("Kill switch re-armed by user. Trading may resume.", "WARNING")
+
+    def load_kill_switch(self):
+        try:
+            with open(self._kill_switch_path) as f:
+                saved = json.load(f)
+        except FileNotFoundError:
+            return
+        except Exception as e:
+            logger.error(f"Could not read kill switch state: {e}")
+            return
+        if saved.get("engaged") and not self.kill_switch:
+            self.kill_switch = True
+            self.halt_reason = saved.get("reason", "Kill switch engaged before restart")
+            self.log(f"Kill switch restored from saved state: {self.halt_reason}. Re-arm to trade.", "CRITICAL")
+
+    def _save_kill_switch(self):
+        try:
+            with open(self._kill_switch_path, "w") as f:
+                json.dump({"engaged": self.kill_switch, "reason": self.halt_reason}, f)
+        except Exception as e:
+            logger.error(f"Could not persist kill switch state: {e}")
 
     def halt_for_day(self, reason: str, current_time: datetime.datetime):
         """Circuit breaker: flatten and stop trading until the next trading day."""

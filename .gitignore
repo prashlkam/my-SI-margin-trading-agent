@@ -3,3 +3,9 @@ data_files/users.json
 
 # Dependencies built by CI for deployment
 .python_packages/
+
+# Runtime state written to DATA_DIR (local dev uses data_files/)
+data_files/trader.lock*
+data_files/kill_switch.json
+data_files/risk_state.json
+data_files/cpu_usage.json

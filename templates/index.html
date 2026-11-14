@@ -818,6 +818,12 @@
                 <span id="cpu-text"></span>
             </div>
 
+            <!-- Single-trader lock: shown only when this container is NOT the active trader -->
+            <div class="sim-time-badge" id="standby-badge" style="display:none; color: var(--warning, #f59e0b);" title="Another container holds the trading lock (normal for a few seconds during an Azure restart). This instance places no orders.">
+                <i data-lucide="pause-circle" style="width: 16px; height: 16px;"></i>
+                <span id="standby-text"></span>
+            </div>
+
             <!-- User Profile -->
             <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--glass-border); padding-left: 16px;">
                 <i data-lucide="user" style="width: 16px; height: 16px; color: var(--color-text-secondary);"></i>
@@ -1329,6 +1335,12 @@
                 document.getElementById('cpu-badge').style.display = '';
                 document.getElementById('cpu-text').textContent =
                     `CPU ${(cpu.used_sec / 60).toFixed(1)} / ${(cpu.halt_at_sec / 60).toFixed(0)} min`;
+            }
+            const lock = state.hosting && state.hosting.trader_lock;
+            const standby = !!(lock && lock.enabled && lock.role === 'standby');
+            document.getElementById('standby-badge').style.display = standby ? '' : 'none';
+            if (standby) {
+                document.getElementById('standby-text').textContent = `Standby ${lock.standby_sec}s (not trading)`;
             }
             if (state.fyers) {
                 const fs = document.getElementById('fyers-status');

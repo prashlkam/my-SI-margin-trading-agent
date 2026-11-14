@@ -95,6 +95,7 @@ F1 is officially dev/test only: **no SLA**, and it enforces CPU quotas. **If the
 | Dependency install CPU cost | Dependencies are built **in GitHub Actions** and shipped as `.python_packages`; Azure's Oryx build is disabled (`SCM_DO_BUILD_DURING_DEPLOYMENT=false`, also in `.deployment`). `startup.sh` never reinstalls on a normal start |
 | `fyers-apiv3` pulls in the obsolete PyPI `asyncio` backport, which shadows the stdlib on `PYTHONPATH` and crashes the app | Removed at build time in CI and again by `startup.sh`; CI boots the app via `startup.sh` the way App Service does |
 | Deploy restarts the agent | Market-hours guard in the deploy workflow |
+| Restarts **overlap** two containers for ~20s → both would trade (duplicate real orders) | **Single-trader lock** (`core/trader_lock.py`): a lease file `trader.lock` in the shared `DATA_DIR`. Only the holder runs live ticks; the new container waits in **standby** until the old one releases the lease on SIGTERM (after any in-flight tick finishes, ~3 s), or, if it crashed, until the lease expires (`TRADER_LOCK_TTL_SEC`, default 30 s). A holder that can't renew stops trading 10 s *before* expiry, so two instances never trade at once. The kill switch is persisted (`kill_switch.json`) so it survives the hand-over. Shown on the dashboard and in `/api/health` (`trader: active/standby`; degraded if a live instance is on standby for > 90 s) |
 
 Measured locally: one full simulated session at 1 tick/s uses about 1 CPU-min for trading. The optimizer is the only variable cost, and with the free-tier cap it is about 35 CPU-s locally. Expect 2–3× on F1's shared cores. **Watch Portal → App Service → Quotas during the DRY_RUN days.**
 
@@ -111,7 +112,7 @@ Secrets (`FYERS_APP_ID`, `FYERS_SECRET_ID`, `FYERS_PIN`, `FYERS_REFRESH_TOKEN`, 
 
 **App settings set by `provision.sh`:** `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `SCM_DO_BUILD_DURING_DEPLOYMENT=false` + `ENABLE_ORYX_BUILD=false` (always enforced), `TZ=Asia/Kolkata`, `AZURE_FREE_TIER=true`, `DEFAULT_BROKER=fyers`, `DRY_RUN=true`, `FYERS_REDIRECT_URI`.
 
-**Free-tier tuning knobs:** `CPU_DAILY_BUDGET_SEC` (3600), `CPU_HALT_FRACTION` (0.75), `OPTIMIZER_MAX_CANDLES` (1500), `OPTIMIZER_DUTY_CYCLE` (0.5), `OPTIMIZER_MIN_CPU_SEC` (900), `KEEPALIVE` / `KEEPALIVE_INTERVAL_SEC` (on / 240).
+**Free-tier tuning knobs:** `CPU_DAILY_BUDGET_SEC` (3600), `CPU_HALT_FRACTION` (0.75), `OPTIMIZER_MAX_CANDLES` (1500), `OPTIMIZER_DUTY_CYCLE` (0.5), `OPTIMIZER_MIN_CPU_SEC` (900), `KEEPALIVE` / `KEEPALIVE_INTERVAL_SEC` (on / 240), `TRADER_LOCK` (on) / `TRADER_LOCK_TTL_SEC` (30).
 
 ---
 

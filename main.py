@@ -21,6 +21,7 @@ from brokers import fyers_auth
 from core.agent import MarginTradingAgent
 from core.market_time import now_ist, is_trading_day, load_extra_holidays
 from core.cpu_budget import CpuBudget
+from core.trader_lock import TraderLock
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -53,6 +54,9 @@ def _env_flag(name: str) -> bool:
 AZURE_FREE_TIER = _env_flag("AZURE_FREE_TIER")
 cpu_budget = CpuBudget(DATA_DIR)
 agent.cpu_guard = cpu_budget if cpu_budget.enabled else None
+# Only one container may trade at a time: App Service restarts overlap the old and new
+# containers for ~20s, which with a live broker would mean duplicate orders.
+trader_lock = TraderLock(DATA_DIR)
 # F1 has no "Always On": the app is unloaded after ~20 idle minutes, killing the trading loop.
 # Self-ping through the public hostname counts as traffic and keeps it loaded.
 KEEPALIVE = _env_flag("KEEPALIVE") or (AZURE_FREE_TIER and not os.environ.get("KEEPALIVE"))
@@ -180,6 +184,35 @@ def live_gate_allows_trading(now: datetime.datetime) -> bool:
     return True
 
 
+def live_tick(agent_time: datetime.datetime):
+    """One live-broker tick - only on the instance holding the single-trader lock."""
+    with trader_lock.tick_guard:
+        if not trader_lock.is_holder():
+            return
+        if live_gate_allows_trading(agent_time):
+            agent.tick(agent_time)
+
+
+async def trader_lock_loop():
+    """Acquire/renew the single-trader lease; a standby instance polls until it frees up."""
+    was_holder = trader_lock.is_holder()
+    while True:
+        try:
+            holder = await asyncio.to_thread(trader_lock.refresh)
+            if holder:
+                # Honour a kill switch pressed on another container (e.g. the one we're
+                # taking over from, or a standby that received the request).
+                await asyncio.to_thread(agent.load_kill_switch)
+            if holder and not was_holder:
+                agent.log(f"This instance is now the active trader ({trader_lock.owner}).", "WARNING")
+            elif was_holder and not holder:
+                agent.log("Single-trader lock lost - this instance has stopped trading.", "CRITICAL")
+            was_holder = holder
+        except Exception as e:
+            logger.error(f"Trader lock loop error: {e}", exc_info=True)
+        await asyncio.sleep(trader_lock.renew_interval)
+
+
 # Background worker loop
 async def trading_agent_loop():
     global is_running, simulation_speed, active_broker, agent, last_loop_heartbeat
@@ -200,9 +233,7 @@ async def trading_agent_loop():
                 else:
                     # Real brokers: always IST, regardless of the host's timezone (FyersAPI.md §8.1).
                     # Broker REST calls block, so run the tick off the event loop.
-                    agent_time = now_ist()
-                    if await asyncio.to_thread(live_gate_allows_trading, agent_time):
-                        await asyncio.to_thread(agent.tick, agent_time)
+                    await asyncio.to_thread(live_tick, now_ist())
 
                 # Update loop timestamp
                 last_tick_time = now
@@ -246,6 +277,7 @@ def select_default_broker():
 @app.on_event("startup")
 async def startup_event():
     await asyncio.to_thread(select_default_broker)
+    asyncio.create_task(trader_lock_loop())
     # Start background loop
     asyncio.create_task(trading_agent_loop())
     if KEEPALIVE and KEEPALIVE_URL:
@@ -258,6 +290,8 @@ async def startup_event():
 async def shutdown_event():
     """Graceful shutdown: flush storage buffers and log final state."""
     logger.info("Shutdown signal received. Flushing data buffers...")
+    # First stop trading and hand the lock to the replacement container.
+    await asyncio.to_thread(trader_lock.release)
     try:
         fyers_broker.disconnect()
         if hasattr(storage, 'buffer') and storage.buffer:
@@ -504,6 +538,9 @@ def health(response: Response):
         problems.append("Fyers not connected during market hours")
     if cpu_budget.should_halt_trading():
         problems.append("Azure CPU quota nearly used")
+    lock = trader_lock.status()
+    if live and lock["role"] == "standby" and lock["standby_sec"] > 3 * trader_lock.ttl:
+        problems.append(f"standby for {lock['standby_sec']}s: trading lock held by {lock['holder']}")
     if problems:
         response.status_code = 503
     return {
@@ -515,6 +552,7 @@ def health(response: Response):
         "running": is_running,
         "halted": agent.kill_switch or agent.halted_today,
         "dry_run": fyers_broker.dry_run,
+        "trader": lock["role"],
     }
 
 # Trading API Endpoints (Protected by Session Auth)
@@ -551,6 +589,7 @@ def get_state(username: str = Depends(verify_auth)):
         "daily_max_loss": agent.risk_manager.DAILY_MAX_LOSS,
         "hosting": {
             "azure_free_tier": AZURE_FREE_TIER,
+            "trader_lock": trader_lock.status(),
             "cpu": cpu_budget.status(),
             "keepalive": bool(KEEPALIVE and KEEPALIVE_URL),
             "gemini_configured": bool(GEMINI_API_KEY),
