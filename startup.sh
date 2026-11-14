@@ -8,11 +8,20 @@ set -e
 # Enable unbuffered Python logging for real-time Azure log streaming
 export PYTHONUNBUFFERED=1
 
-# Azure persistent storage directory (survives restarts)
-export DATA_DIR=/home/site/data
+# Azure persistent storage directory (survives restarts). App Settings may override.
+export DATA_DIR="${DATA_DIR:-/home/site/data}"
+mkdir -p "$DATA_DIR"
 
-# Install dependencies
-pip install -r requirements.txt --no-cache-dir
+# Dependencies are built at deploy time (Oryx, SCM_DO_BUILD_DURING_DEPLOYMENT=true).
+# Only fall back to pip if they're missing: on the Free (F1) tier the app cold-starts
+# often, and reinstalling every time burns the daily CPU quota (Azure.md §2a).
+if [ -f antenv/bin/activate ]; then
+    source antenv/bin/activate
+fi
+if ! python -c "import fastapi, uvicorn, gunicorn, pandas, fyers_apiv3" 2>/dev/null; then
+    echo "Dependencies missing - installing requirements.txt"
+    pip install -r requirements.txt --no-cache-dir
+fi
 
 # Start the application using gunicorn with uvicorn workers.
 # Azure App Service sets the PORT environment variable automatically.
@@ -20,7 +29,8 @@ pip install -r requirements.txt --no-cache-dir
 # IMPORTANT: Workers is set to 1 because the app uses:
 #   - Shared in-memory state (active broker, simulation clock)
 #   - Background async tasks (trading_agent_loop, backtesting)
-# Multiple workers would cause state fragmentation.
+# Multiple workers would cause state fragmentation - and with a live broker,
+# DUPLICATE REAL ORDERS. Never raise this, and never scale out beyond 1 instance.
 exec gunicorn main:app \
     --worker-class uvicorn.workers.UvicornWorker \
     --bind 0.0.0.0:"${PORT:-8000}" \

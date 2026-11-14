@@ -812,6 +812,12 @@
                 <span id="sim-time">09:00:00</span>
             </div>
 
+            <!-- Azure free-tier CPU quota (hidden unless the host reports it) -->
+            <div class="sim-time-badge" id="cpu-badge" style="display:none;" title="Azure Free (F1) daily CPU quota used. Trading halts and flattens at the halt threshold.">
+                <i data-lucide="cpu" style="width: 16px; height: 16px;"></i>
+                <span id="cpu-text"></span>
+            </div>
+
             <!-- User Profile -->
             <div style="display: flex; align-items: center; gap: 12px; border-left: 1px solid var(--glass-border); padding-left: 16px;">
                 <i data-lucide="user" style="width: 16px; height: 16px; color: var(--color-text-secondary);"></i>
@@ -1318,6 +1324,12 @@
                 banner.style.display = 'none';
             }
             document.getElementById('rearm-btn').style.display = state.kill_switch ? '' : 'none';
+            const cpu = state.hosting && state.hosting.cpu;
+            if (cpu && cpu.enabled) {
+                document.getElementById('cpu-badge').style.display = '';
+                document.getElementById('cpu-text').textContent =
+                    `CPU ${(cpu.used_sec / 60).toFixed(1)} / ${(cpu.halt_at_sec / 60).toFixed(0)} min`;
+            }
             if (state.fyers) {
                 const fs = document.getElementById('fyers-status');
                 fs.textContent = state.fyers.connected

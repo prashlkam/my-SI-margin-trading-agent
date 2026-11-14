@@ -68,6 +68,52 @@ Resource needs are modest (FastAPI + pandas/numpy, ~2 symbols). **B1 (1 core / 1
 
 ---
 
+## 2a. Free-tier deployment profile (IMPLEMENTED — this is what the repo now deploys)
+
+Requirement: **only free Azure services**. Everything below is $0. The rest of this document (B1/S1, Key Vault, slots, App Insights) is kept as the **upgrade path**.
+
+| Azure.md plan | Free-tier substitute (implemented) |
+|---|---|
+| App Service **B1/S1** with **Always On** | **Free F1** Linux plan, 1 instance. No Always On → app **self-pings** `/api/health` every 4 min (`KEEPALIVE`), and the GitHub **monitor** workflow wakes it from 07:30 IST |
+| Key Vault + Managed Identity | **App Settings** (encrypted at rest, free). Key Vault is billed per operation, so it's not used |
+| Application Insights + Azure Monitor alerts | `/api/health` + **GitHub Actions monitor** (`.github/workflows/monitor.yml`) — a failed run emails you. Log stream in the portal for logs |
+| Staging slot + swap | Not available on F1 → deploy workflow **refuses to deploy 09:00–15:35 IST** on weekdays unless forced |
+| Health Check | Enabled on `/api/health/live` (fails only if the trading loop is stuck) |
+| Easy Auth (Entra ID) | Same (free). `/api/health*` excluded so monitoring works |
+| Daily token refresh job | In-app pre-open gate (FyersAPI.md §3.4) — no extra resource |
+
+### F1 risks and the mitigations built into the app
+
+F1 is officially dev/test only: **no SLA**, and it enforces CPU quotas. **If the app exceeds the daily CPU quota, Azure stops it until 00:00 UTC (05:30 IST)**, and every request gets HTTP 403. Mid-session, that would leave positions with no stop-loss management. The mitigations:
+
+| Risk | Mitigation (code) |
+|---|---|
+| CPU (Day) quota exceeded → app stopped | `core/cpu_budget.py` tracks CPU per UTC day (persisted across restarts). At 75% of the budget (`CPU_HALT_FRACTION`) the agent **flattens and halts for the day** while it still can. Visible as a CPU badge on the dashboard |
+| CPU spike from the nightly optimizer (the only heavy job) | Free-tier mode caps it to the last 1,500 candles/symbol (`OPTIMIZER_MAX_CANDLES`), runs it at 50% duty cycle (`OPTIMIZER_DUTY_CYCLE`) for the 5-minute quota, and skips it if < 15 CPU-min remain |
+| Idle unload kills the trading loop | Self keep-alive + GitHub wake-up schedule |
+| Unplanned restart mid-session | Open broker positions are **adopted** with a trailing stop-loss; trade count / realized P&L are restored from `risk_state.json`; `DEFAULT_BROKER=fyers` reconnects from App Settings (refresh token + PIN) |
+| Cold-start CPU cost | `startup.sh` no longer runs `pip install` on every start (Oryx builds at deploy time) |
+| Deploy restarts the agent | Market-hours guard in the deploy workflow |
+
+Measured locally: one full simulated session at 1 tick/s uses about 1 CPU-min for trading. The optimizer is the only variable cost, and with the free-tier cap it is about 35 CPU-s locally. Expect 2–3× on F1's shared cores. **Watch Portal → App Service → Quotas during the DRY_RUN days.**
+
+> If you ever trade real size, B1 (~$13/mo) removes the CPU quota and idle unload entirely. Set `AZURE_FREE_TIER=false` then.
+
+### How to deploy (free tier)
+
+```bash
+az login
+AZ_APP_NAME=mywebapp07 ./infra/azure/provision.sh          # add SETUP_GITHUB_OIDC=1 for OIDC deploys
+gh variable set AZURE_WEBAPP_URL --body https://mywebapp07.azurewebsites.net
+```
+Secrets (`FYERS_APP_ID`, `FYERS_SECRET_ID`, `FYERS_PIN`, `FYERS_REFRESH_TOKEN`, `GEMINI_API_KEY`) can be passed as environment variables to the script. You can also enter them later in Portal → Configuration. The script sets `DRY_RUN=true`; set it to `false` only after a clean DRY_RUN session.
+
+**App settings set by `provision.sh`:** `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `SCM_DO_BUILD_DURING_DEPLOYMENT=true`, `TZ=Asia/Kolkata`, `AZURE_FREE_TIER=true`, `DEFAULT_BROKER=fyers`, `DRY_RUN=true`, `FYERS_REDIRECT_URI`.
+
+**Free-tier tuning knobs:** `CPU_DAILY_BUDGET_SEC` (3600), `CPU_HALT_FRACTION` (0.75), `OPTIMIZER_MAX_CANDLES` (1500), `OPTIMIZER_DUTY_CYCLE` (0.5), `OPTIMIZER_MIN_CPU_SEC` (900), `KEEPALIVE` / `KEEPALIVE_INTERVAL_SEC` (on / 240).
+
+---
+
 ## 3. App configuration (Startup command & settings)
 
 **Startup command** (App Service → Configuration → General settings):
@@ -231,29 +277,29 @@ A GitHub Actions workflow for App Service already exists (commit `63ee197`). Fin
 
 Infrastructure
 - [ ] Resource group created (e.g. `rg-margin-agent`)
-- [ ] App Service Plan: **Linux, Basic B1+ (S1 recommended)**, **autoscale disabled**, **1 instance**
-- [ ] Web App: Python **3.11**, startup command `startup.sh`, **Always On = On**, **Web sockets = On**, **HTTPS Only = On**
-- [ ] `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `TZ=Asia/Kolkata`
+- [ ] App Service Plan: **Linux, Free F1**, **1 instance** — scripted in `infra/azure/provision.sh` (run it)
+- [ ] Web App: Python **3.11**, startup `bash startup.sh`, **HTTPS Only**, TLS 1.2 — scripted (Always On N/A on F1 → keep-alive in code)
+- [ ] `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `TZ=Asia/Kolkata` — scripted
 
 Secrets
-- [ ] Key Vault created; secrets added (Fyers app/secret/redirect/access/refresh, **GEMINI-API-KEY**)
-- [ ] System-assigned Managed Identity on; Key Vault RBAC granted
-- [ ] App settings use `@Microsoft.KeyVault(...)` references; verified resolving (no "Key Vault Reference" errors)
-- [ ] Code loads Fyers creds (and Gemini key) from env at startup (§6.3)
+- [ ] Secrets in **App Settings** (free; replaces Key Vault): Fyers app/secret/PIN/refresh, **GEMINI_API_KEY**
+- [x] ~~Managed Identity + Key Vault RBAC~~ — N/A on the free profile
+- [x] ~~Key Vault references~~ — N/A on the free profile
+- [x] Code loads Fyers creds (and Gemini key) from env at startup (§6.3)
 
 Security
-- [ ] Easy Auth (Entra ID) and/or IP Access Restrictions limiting who can reach the dashboard
+- [ ] Easy Auth (Entra ID, assignment required) — scripted; `/api/health*` excluded
 - [ ] HTTPS only; TLS 1.2+; custom domain + cert (if used)
 
 Trading-readiness link
-- [ ] Daily Fyers token refresh in place (§9)
+- [x] Daily Fyers token refresh in place (§9, in-app pre-open gate)
 - [ ] **All FyersAPI.md §9 items green** (dry-run validated, kill switch, reconciliation, etc.)
 
 Operations
-- [ ] Application Insights + Log Analytics wired; Health Check path set
-- [ ] Alerts: crash/restart, availability, high exception rate, market-hours heartbeat
-- [ ] Backups enabled (Standard+); CI/CD deploys via staging slot, swap **outside market hours**
-- [ ] Verified: only **one** instance ever runs the trading loop (no autoscale, staging not live-trading)
+- [ ] Health Check path `/api/health/live` — scripted (App Insights skipped: free profile)
+- [x] Alerts via GitHub Actions monitor (`monitor.yml`) — set repo variable `AZURE_WEBAPP_URL`
+- [x] CI/CD blocks deploys during market hours (no slots/backups on F1)
+- [ ] Verified: only **one** instance ever runs the trading loop (F1: 1 instance, no slots, `--workers 1`)
 
 ---
 

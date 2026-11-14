@@ -2,6 +2,7 @@ import json
 import os
 import random
 import logging
+import time
 from typing import Dict, List, Any
 from core.strategy import TradingStrategy
 
@@ -83,6 +84,14 @@ class StrategyOptimizer:
             logger.warning("No historical candle data provided for optimization. Skipping.")
             return current_params
 
+        # CPU controls for quota-limited hosting (Azure F1, see Azure.md §2a). Off unless configured.
+        free_tier = os.environ.get("AZURE_FREE_TIER", "").lower() in ("1", "true", "yes", "on")
+        max_candles = int(os.environ.get("OPTIMIZER_MAX_CANDLES", "1500" if free_tier else "0"))
+        duty_cycle = float(os.environ.get("OPTIMIZER_DUTY_CYCLE", "0.5" if free_tier else "1.0"))
+        if max_candles > 0:
+            # Most recent candles only: backtest cost grows faster than linearly with length.
+            stock_candles = {s: c[-max_candles:] for s, c in stock_candles.items()}
+
         # Calculate PnL with current parameters
         best_pnl = self._backtest_multiple_stocks(current_params, stock_candles)
         best_params = current_params.copy()
@@ -92,8 +101,13 @@ class StrategyOptimizer:
         # Search neighborhood by perturbing parameters
         num_candidates = 25
         for i in range(num_candidates):
+            started = time.process_time()
             candidate = self._generate_candidate(best_params)
             candidate_pnl = self._backtest_multiple_stocks(candidate, stock_candles)
+            if 0 < duty_cycle < 1:
+                # Idle so CPU use stays at `duty_cycle` of wall time (avoids F1's 5-minute CPU quota).
+                spent = time.process_time() - started
+                time.sleep(spent * (1 - duty_cycle) / duty_cycle)
             
             if candidate_pnl > best_pnl:
                 logger.info(f"Found better parameters! Candidate {i}: PnL Rs. {candidate_pnl:.2f} (Old: Rs. {best_pnl:.2f})")

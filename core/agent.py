@@ -1,5 +1,7 @@
+import json
 import logging
 import datetime
+import os
 import time
 from typing import Dict, List, Any, Optional
 from core.market_time import now_ist
@@ -40,6 +42,16 @@ class MarginTradingAgent:
         self.kill_switch = False      # manual kill: blocks trading until re-armed
         self.halted_today = False     # circuit breaker: blocks trading until next day
         self.halt_reason = ""
+
+        # Optional CPU-quota guard (core.cpu_budget.CpuBudget), set by main.py on Azure F1
+        self.cpu_guard = None
+        # Live-mode daily risk counters persisted across restarts
+        self._risk_state_path = os.path.join(config_dir, "risk_state.json")
+        self._risk_state_date = None
+        self._risk_state_saved = None
+        # symbol -> monotonic time of last exit fill; guards against re-adopting a position
+        # the broker's position book hasn't caught up on yet
+        self._recent_exits: Dict[str, float] = {}
 
         # Log system status
         self.log("Margin Trading Agent Initialised in Standby Mode.")
@@ -197,6 +209,40 @@ class MarginTradingAgent:
             else:
                 self.run_daily_closeout(current_time)
 
+        if not self.is_simulated:
+            self._sync_risk_state(current_date)
+
+    def _sync_risk_state(self, current_date: datetime.date):
+        """
+        Persist trade count / realized P&L for live trading, and restore them after an
+        unplanned restart so daily limits still hold (Azure.md §2a).
+        """
+        day = current_date.isoformat()
+        rm = self.risk_manager
+        if self._risk_state_date != day:
+            self._risk_state_date = day
+            try:
+                with open(self._risk_state_path) as f:
+                    saved = json.load(f)
+                if saved.get("date") == day:
+                    rm.trade_count = max(rm.trade_count, int(saved.get("trade_count", 0)))
+                    if not rm.realized_pnl:
+                        rm.realized_pnl = float(saved.get("realized_pnl", 0.0))
+                    self.log(f"Restored today's risk state after restart: {rm.trade_count} trades, "
+                             f"realized P&L Rs. {rm.realized_pnl:.2f}.", "WARNING")
+            except FileNotFoundError:
+                pass
+            except Exception as e:
+                logger.error(f"Could not read risk state: {e}")
+        state = {"date": day, "trade_count": rm.trade_count, "realized_pnl": round(rm.realized_pnl, 2)}
+        if state != self._risk_state_saved:
+            try:
+                with open(self._risk_state_path, "w") as f:
+                    json.dump(state, f)
+                self._risk_state_saved = state
+            except Exception as e:
+                logger.error(f"Could not persist risk state: {e}")
+
     def run_pre_market_scan(self):
         self.log("Running Pre-Market scan (9:05 AM)...")
         # For mock broker, we get simulated news and movers.
@@ -296,8 +342,27 @@ class MarginTradingAgent:
         self.market_closed = False
 
     def run_live_trading(self, current_time: datetime.datetime):
+        # 0. Azure free-tier CPU quota: flatten while we still can, before Azure stops the app
+        if self.cpu_guard is not None and self.cpu_guard.should_halt_trading():
+            self.halt_for_day("Azure free-tier CPU quota nearly used up", current_time)
+            return
+
         # 1. Daily P&L breakers: profit cap (Rs. 12,000) and max-loss circuit breaker
         positions = self.broker.get_positions()
+
+        # Positions the risk manager doesn't know about (e.g. after an app restart) would
+        # otherwise have no trailing stop-loss. Adopt them.
+        for pos in positions:
+            if time.monotonic() - self._recent_exits.get(pos["symbol"], -1e9) < 15:
+                continue
+            if pos["symbol"] not in self.risk_manager.position_directions:
+                direction = "LONG" if pos["qty"] > 0 else "SHORT"
+                self.risk_manager.adopt_position(pos["symbol"], direction, pos["avg_price"],
+                                                 pos.get("current_price") or pos["avg_price"])
+                self.log(f"Adopted untracked {direction} position in {pos['symbol']} ({pos['qty']} @ "
+                         f"Rs. {pos['avg_price']}) — trailing stop-loss now active.", "WARNING", current_time)
+                if hasattr(self.broker, "subscribe_symbols"):
+                    self.broker.subscribe_symbols([pos["symbol"]])
         day_pnl = self._day_pnl(positions)
         unrealized_pnl = day_pnl - self.risk_manager.realized_pnl
 
@@ -354,6 +419,7 @@ class MarginTradingAgent:
                     continue
                 exit_price = fill["price"]
                 closed_qty = fill["qty"] if qty > 0 else -fill["qty"]
+                self._recent_exits[symbol] = time.monotonic()
 
                 realized = (exit_price - avg_price) * closed_qty
                 if abs(closed_qty) == abs(qty):
@@ -522,7 +588,11 @@ class MarginTradingAgent:
         self.update_summary_metrics()
         self.log("Daily trade operations completed. Positions squared off.")
         
-        # 5. Nightly Self-Improvement optimization
+        # 5. Nightly Self-Improvement optimization (optional; skipped if the CPU quota is low)
+        min_cpu = float(os.environ.get("OPTIMIZER_MIN_CPU_SEC", 900))
+        if self.cpu_guard is not None and self.cpu_guard.remaining_seconds() < min_cpu:
+            self.log("Skipping parameter optimization: not enough Azure CPU quota left today.", "WARNING")
+            return
         self.log("Running self-improvement engine: Optimising parameters for next session...")
         trades = self.storage.get_trades()
         optimized = self.optimizer.run_optimization(trades, self.daily_price_data)

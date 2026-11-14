@@ -190,3 +190,18 @@ class RiskManager:
     def required_margin(self, qty: int, price: float) -> float:
         """Approximate intraday margin for an order (notional / leverage)."""
         return abs(qty * price) / max(self.INTRADAY_LEVERAGE, 1.0)
+
+    def adopt_position(self, symbol: str, direction: str, entry_price: float, current_price: float):
+        """
+        Start managing a position opened outside this process (e.g. before a restart).
+        Does not count toward the daily trade limit. The trailing peak starts at the more
+        conservative of entry and current price, since the true peak is unknown.
+        """
+        direction = direction.upper()
+        self.position_directions[symbol] = direction
+        if direction == "LONG":
+            self.peak_prices[symbol] = max(entry_price, current_price)
+        else:
+            self.peak_prices[symbol] = min(entry_price, current_price)
+        self.tp_targets[symbol] = self.TP_MIN
+        logger.warning(f"Adopted {direction} position for {symbol} (entry Rs. {entry_price}, peak Rs. {self.peak_prices[symbol]}).")

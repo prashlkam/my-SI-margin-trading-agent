@@ -20,6 +20,7 @@ from brokers.fyers import FyersConnector
 from brokers import fyers_auth
 from core.agent import MarginTradingAgent
 from core.market_time import now_ist, is_trading_day, load_extra_holidays
+from core.cpu_budget import CpuBudget
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -44,6 +45,24 @@ fyers_broker = FyersConnector()
 # Set mock broker as default active broker
 active_broker = mock_broker
 agent = MarginTradingAgent(active_broker, storage, DATA_DIR)
+
+# Azure free tier (F1) support — see Azure.md §2a
+def _env_flag(name: str) -> bool:
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+AZURE_FREE_TIER = _env_flag("AZURE_FREE_TIER")
+cpu_budget = CpuBudget(DATA_DIR)
+agent.cpu_guard = cpu_budget if cpu_budget.enabled else None
+# F1 has no "Always On": the app is unloaded after ~20 idle minutes, killing the trading loop.
+# Self-ping through the public hostname counts as traffic and keeps it loaded.
+KEEPALIVE = _env_flag("KEEPALIVE") or (AZURE_FREE_TIER and not os.environ.get("KEEPALIVE"))
+KEEPALIVE_INTERVAL_SEC = int(os.environ.get("KEEPALIVE_INTERVAL_SEC", 240))
+KEEPALIVE_URL = os.environ.get("KEEPALIVE_URL") or (
+    f"https://{os.environ['WEBSITE_HOSTNAME']}/api/health" if os.environ.get("WEBSITE_HOSTNAME") else "")
+# Provisioned for future AI features (Azure.md §0); not used by any code yet.
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+last_loop_heartbeat = time.monotonic()
+app_started_at = time.time()
 
 # Global simulation state
 is_running = True
@@ -163,10 +182,11 @@ def live_gate_allows_trading(now: datetime.datetime) -> bool:
 
 # Background worker loop
 async def trading_agent_loop():
-    global is_running, simulation_speed, active_broker, agent
+    global is_running, simulation_speed, active_broker, agent, last_loop_heartbeat
     last_tick_time = datetime.datetime.now()
 
     while True:
+        last_loop_heartbeat = time.monotonic()
         try:
             if is_running:
                 now = datetime.datetime.now()
@@ -195,11 +215,44 @@ async def trading_agent_loop():
             
         await asyncio.sleep(1.0) # Tick once per second real-time
 
+async def keepalive_loop():
+    """Ping our own public URL so Azure F1 doesn't unload the idle app (Azure.md §2a)."""
+    import requests
+    while True:
+        await asyncio.sleep(KEEPALIVE_INTERVAL_SEC)
+        try:
+            await asyncio.to_thread(requests.get, KEEPALIVE_URL, timeout=15)
+        except Exception as e:
+            logger.warning(f"Keep-alive ping failed: {e}")
+
+
+def select_default_broker():
+    """
+    Unattended start (Azure restarts the app at will): if DEFAULT_BROKER=fyers, make Fyers
+    the active broker and connect from env-seeded credentials. If no valid token is available,
+    the pre-open gate keeps retrying the refresh and the dashboard shows 'not logged in'.
+    """
+    global active_broker
+    if os.environ.get("DEFAULT_BROKER", "mock").strip().lower() != "fyers":
+        return
+    creds = credentials_cache["fyers"]
+    connected = connect_fyers_from_cache() or (bool(creds.get("refresh_token")) and ensure_fyers_session())
+    active_broker = fyers_broker
+    agent.set_broker(fyers_broker)
+    agent.log(f"DEFAULT_BROKER=fyers: Fyers selected at startup ({'connected' if connected else 'NOT connected — login required'}).",
+              "INFO" if connected else "CRITICAL")
+
+
 @app.on_event("startup")
 async def startup_event():
+    await asyncio.to_thread(select_default_broker)
     # Start background loop
     asyncio.create_task(trading_agent_loop())
-    logger.info(f"Trading agent background worker started. Data directory: {DATA_DIR}")
+    if KEEPALIVE and KEEPALIVE_URL:
+        asyncio.create_task(keepalive_loop())
+        logger.info(f"Keep-alive enabled: pinging {KEEPALIVE_URL} every {KEEPALIVE_INTERVAL_SEC}s.")
+    logger.info(f"Trading agent background worker started. Data directory: {DATA_DIR}"
+                f"{' (Azure free tier mode)' if AZURE_FREE_TIER else ''}")
 
 @app.on_event("shutdown")
 async def shutdown_event():
@@ -425,6 +478,45 @@ def replay_backtest(background_tasks: BackgroundTasks, username: str = Depends(v
 def get_backtest_status(username: str = Depends(verify_auth)):
     return backtest_status
 
+# Health endpoints — unauthenticated, expose no account data (Azure.md §10).
+# /api/health/live: liveness for Azure Health Check — fails ONLY if the trading loop is stuck,
+#                   so the platform never restarts the app over e.g. an expired broker token.
+# /api/health:      full status for the keep-alive ping and the GitHub Actions monitor.
+@app.get("/api/health/live")
+def health_live(response: Response):
+    loop_age = time.monotonic() - last_loop_heartbeat
+    if loop_age > 30:
+        response.status_code = 503
+        return {"status": "stalled", "loop_age_sec": int(loop_age)}
+    return {"status": "ok"}
+
+
+@app.get("/api/health")
+def health(response: Response):
+    now = now_ist()
+    problems = []
+    loop_age = time.monotonic() - last_loop_heartbeat
+    if loop_age > 30:
+        problems.append(f"trading loop stalled ({loop_age:.0f}s)")
+    live = active_broker is not mock_broker
+    market_hours = is_trading_day(now.date(), extra_holidays) and "09:00" <= now.strftime("%H:%M") <= "15:30"
+    if live and market_hours and active_broker is fyers_broker and not fyers_broker.connected:
+        problems.append("Fyers not connected during market hours")
+    if cpu_budget.should_halt_trading():
+        problems.append("Azure CPU quota nearly used")
+    if problems:
+        response.status_code = 503
+    return {
+        "status": "degraded" if problems else "ok",
+        "problems": problems,
+        "time_ist": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "uptime_sec": int(time.time() - app_started_at),
+        "broker": active_broker.__class__.__name__,
+        "running": is_running,
+        "halted": agent.kill_switch or agent.halted_today,
+        "dry_run": fyers_broker.dry_run,
+    }
+
 # Trading API Endpoints (Protected by Session Auth)
 @app.get("/api/state")
 def get_state(username: str = Depends(verify_auth)):
@@ -457,6 +549,12 @@ def get_state(username: str = Depends(verify_auth)):
         "halted_today": agent.halted_today,
         "halt_reason": agent.halt_reason,
         "daily_max_loss": agent.risk_manager.DAILY_MAX_LOSS,
+        "hosting": {
+            "azure_free_tier": AZURE_FREE_TIER,
+            "cpu": cpu_budget.status(),
+            "keepalive": bool(KEEPALIVE and KEEPALIVE_URL),
+            "gemini_configured": bool(GEMINI_API_KEY),
+        },
         "fyers": {
             "connected": fyers_broker.connected,
             "dry_run": fyers_broker.dry_run,
@@ -658,6 +756,7 @@ def reset_simulation(username: str = Depends(verify_auth)):
     
     # Reset agent
     agent = MarginTradingAgent(mock_broker, storage, DATA_DIR)
+    agent.cpu_guard = cpu_budget if cpu_budget.enabled else None
     
     agent.log("Simulation reset. Virtual time started at 9:00 AM.", "INFO")
     return {"status": "success"}
