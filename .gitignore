@@ -1,0 +1,2 @@
+# Login database (password hashes) - never commit
+data_files/users.json
