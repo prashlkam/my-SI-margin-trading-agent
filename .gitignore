@@ -1,2 +1,5 @@
 # Login database (password hashes) - never commit
 data_files/users.json
+
+# Dependencies built by CI for deployment
+.python_packages/

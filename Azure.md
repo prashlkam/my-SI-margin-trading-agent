@@ -92,7 +92,8 @@ F1 is officially dev/test only: **no SLA**, and it enforces CPU quotas. **If the
 | CPU spike from the nightly optimizer (the only heavy job) | Free-tier mode caps it to the last 1,500 candles/symbol (`OPTIMIZER_MAX_CANDLES`), runs it at 50% duty cycle (`OPTIMIZER_DUTY_CYCLE`) for the 5-minute quota, and skips it if < 15 CPU-min remain |
 | Idle unload kills the trading loop | Self keep-alive + GitHub wake-up schedule |
 | Unplanned restart mid-session | Open broker positions are **adopted** with a trailing stop-loss; trade count / realized P&L are restored from `risk_state.json`; `DEFAULT_BROKER=fyers` reconnects from App Settings (refresh token + PIN) |
-| Cold-start CPU cost | `startup.sh` no longer runs `pip install` on every start (Oryx builds at deploy time) |
+| Dependency install CPU cost | Dependencies are built **in GitHub Actions** and shipped as `.python_packages`; Azure's Oryx build is disabled (`SCM_DO_BUILD_DURING_DEPLOYMENT=false`, also in `.deployment`). `startup.sh` never reinstalls on a normal start |
+| `fyers-apiv3` pulls in the obsolete PyPI `asyncio` backport, which shadows the stdlib on `PYTHONPATH` and crashes the app | Removed at build time in CI and again by `startup.sh`; CI boots the app via `startup.sh` the way App Service does |
 | Deploy restarts the agent | Market-hours guard in the deploy workflow |
 
 Measured locally: one full simulated session at 1 tick/s uses about 1 CPU-min for trading. The optimizer is the only variable cost, and with the free-tier cap it is about 35 CPU-s locally. Expect 2–3× on F1's shared cores. **Watch Portal → App Service → Quotas during the DRY_RUN days.**
@@ -108,7 +109,7 @@ gh variable set AZURE_WEBAPP_URL --body https://mywebapp07.azurewebsites.net
 ```
 Secrets (`FYERS_APP_ID`, `FYERS_SECRET_ID`, `FYERS_PIN`, `FYERS_REFRESH_TOKEN`, `GEMINI_API_KEY`) can be passed as environment variables to the script. You can also enter them later in Portal → Configuration. The script sets `DRY_RUN=true`; set it to `false` only after a clean DRY_RUN session.
 
-**App settings set by `provision.sh`:** `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `SCM_DO_BUILD_DURING_DEPLOYMENT=true`, `TZ=Asia/Kolkata`, `AZURE_FREE_TIER=true`, `DEFAULT_BROKER=fyers`, `DRY_RUN=true`, `FYERS_REDIRECT_URI`.
+**App settings set by `provision.sh`:** `DATA_DIR=/home/site/data`, `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`, `SCM_DO_BUILD_DURING_DEPLOYMENT=false` + `ENABLE_ORYX_BUILD=false` (always enforced), `TZ=Asia/Kolkata`, `AZURE_FREE_TIER=true`, `DEFAULT_BROKER=fyers`, `DRY_RUN=true`, `FYERS_REDIRECT_URI`.
 
 **Free-tier tuning knobs:** `CPU_DAILY_BUDGET_SEC` (3600), `CPU_HALT_FRACTION` (0.75), `OPTIMIZER_MAX_CANDLES` (1500), `OPTIMIZER_DUTY_CYCLE` (0.5), `OPTIMIZER_MIN_CPU_SEC` (900), `KEEPALIVE` / `KEEPALIVE_INTERVAL_SEC` (on / 240).
 

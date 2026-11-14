@@ -6,10 +6,12 @@
 # app cold-starts often and every pip install burns the CPU quota (Azure.md §2a).
 # Lookup order:
 #   1. Packages already importable (local dev, or PYTHONPATH set by the platform)
-#   2. Oryx build output: antenv/lib/python3.X/site-packages under $APP_PATH
+#   2. .python_packages shipped in the deploy, built by GitHub Actions (the normal path;
+#      used only if built for the running Python version)
+#   3. Oryx build output: antenv/lib/python3.X/site-packages under $APP_PATH
 #      (App Service extracts the build to /tmp/<id> and points APP_PATH at it),
 #      the current directory, or /home/site/wwwroot
-#   3. A persistent cache in /home/site/pydeps/<hash>, keyed by requirements.txt +
+#   4. A persistent cache in /home/site/pydeps/<hash>, keyed by requirements.txt +
 #      Python version. Installed ONCE if nothing else is found; reused afterwards.
 
 # Exit on any error
@@ -60,11 +62,26 @@ SITE_PACKAGES=""
 if deps_present ""; then
     echo "startup: dependencies already importable"
 else
+    # Packages built by GitHub Actions and shipped in the deploy (preferred). Only used
+    # if built for this Python version - compiled wheels (numpy, pandas) aren't portable.
+    for shipped in "$APP_ROOT/.python_packages" "/home/site/wwwroot/.python_packages"; do
+        if [ -d "$shipped/lib/site-packages" ]; then
+            built_for="$(cat "$shipped/PYTHON_VERSION" 2>/dev/null || echo unknown)"
+            if [ "$built_for" != "$PY_VER" ]; then
+                echo "startup: ignoring $shipped (built for Python $built_for, running $PY_VER)"
+            elif deps_present "$shipped/lib/site-packages"; then
+                SITE_PACKAGES="$shipped/lib/site-packages"
+                echo "startup: using shipped packages at $SITE_PACKAGES"
+                break
+            fi
+        fi
+    done
+
     for candidate in \
         "$APP_ROOT/antenv/lib/python$PY_VER/site-packages" \
         "./antenv/lib/python$PY_VER/site-packages" \
         "/home/site/wwwroot/antenv/lib/python$PY_VER/site-packages"; do
-        if [ -d "$candidate" ] && deps_present "$candidate"; then
+        if [ -z "$SITE_PACKAGES" ] && [ -d "$candidate" ] && deps_present "$candidate"; then
             SITE_PACKAGES="$candidate"
             echo "startup: using build output at $SITE_PACKAGES"
             break

@@ -88,7 +88,6 @@ has_setting() { grep -qx "$1" <<<"$EXISTING"; }
 DEFAULTS=(
   "DATA_DIR=/home/site/data"
   "WEBSITES_ENABLE_APP_SERVICE_STORAGE=true"
-  "SCM_DO_BUILD_DURING_DEPLOYMENT=true"
   "TZ=Asia/Kolkata"
   "AZURE_FREE_TIER=true"
   "DEFAULT_BROKER=fyers"
@@ -103,6 +102,9 @@ done
 for name in FYERS_APP_ID FYERS_SECRET_ID FYERS_PIN FYERS_REFRESH_TOKEN FYERS_ACCESS_TOKEN GEMINI_API_KEY; do
   if [[ -n "${!name:-}" ]]; then TO_SET+=("${name}=${!name}"); fi
 done
+# Always enforced (not a tuning knob): dependencies are built by GitHub Actions and shipped
+# in .python_packages, so Azure must NOT run its own build - on F1 it burns the CPU quota.
+TO_SET+=("SCM_DO_BUILD_DURING_DEPLOYMENT=false" "ENABLE_ORYX_BUILD=false")
 if (( ${#TO_SET[@]} )); then
   say "Setting ${#TO_SET[@]} app setting(s): $(printf '%s ' "${TO_SET[@]%%=*}")"
   az webapp config appsettings set -g "$RG" -n "$APP" --settings "${TO_SET[@]}" -o none

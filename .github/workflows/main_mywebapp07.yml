@@ -2,7 +2,8 @@
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 # More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
 #
-# Free-tier deploy pipeline (Azure.md §11). No staging slots on F1, so:
+# Free-tier deploy pipeline (Azure.md §11). Dependencies are built in GitHub Actions and
+# shipped in the package (no Oryx build on Azure). No staging slots on F1, so:
 #  * a deploy restarts the live app -> it is BLOCKED during NSE market hours unless forced;
 #  * OIDC login is used when AZURE_CLIENT_ID is configured, else the publish profile.
 
@@ -35,23 +36,48 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Must match the App Service runtime (Python 3.11): numpy/pandas wheels are version-specific.
       - name: Set up Python version
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # Catch dependency and import errors before they reach the live app.
-      - name: Create and Start virtual environment and Install dependencies
+      # Dependencies are built HERE (free GitHub CPU) and shipped in the package, so App
+      # Service never runs pip/Oryx - on the Free (F1) tier that work counts against the
+      # app's CPU quota (Azure.md §2a). startup.sh puts this folder on PYTHONPATH.
+      - name: Build dependencies into .python_packages
         run: |
-          python -m venv antenv
-          source antenv/bin/activate
-          pip install -r requirements.txt
+          SITE=.python_packages/lib/site-packages
+          python -m pip install --upgrade pip
+          pip install --target "$SITE" -r requirements.txt
+          # fyers-apiv3 pulls in the obsolete PyPI `asyncio==3.4.3` backport; on PYTHONPATH it
+          # shadows the stdlib asyncio and crashes uvicorn. Never ship it.
+          rm -rf "$SITE/asyncio"
+          python -c 'import sys; print(f"{sys.version_info[0]}.{sys.version_info[1]}")' > .python_packages/PYTHON_VERSION
+          echo "Python $(cat .python_packages/PYTHON_VERSION) packages: $(du -sh .python_packages | cut -f1)"
+
+      # Boot through startup.sh exactly as App Service will: plain interpreter, no venv,
+      # dependencies only from the shipped folder. Fails if startup.sh would reinstall.
+      - name: Smoke test - boot via startup.sh like App Service
+        run: |
+          APP_PATH="$PWD" PYTHON=python DATA_DIR="$(mktemp -d)" PORT=8000 \
+            bash startup.sh > boot.log 2>&1 &
+          for i in $(seq 1 90); do
+            if curl -sf localhost:8000/api/health/live; then
+              echo; grep '^startup:' boot.log
+              if grep -q 'installing ONCE' boot.log; then
+                echo "::error::startup.sh did not use the shipped packages"; exit 1
+              fi
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::App did not start via startup.sh"; cat boot.log; exit 1
 
       - name: Smoke test - app imports and health endpoint responds
         run: |
-          source antenv/bin/activate
-          pip install httpx
-          DATA_DIR="$(mktemp -d)" python -c "
+          python -m pip install httpx   # test-only; not shipped
+          PYTHONPATH="$PWD/.python_packages/lib/site-packages" DATA_DIR="$(mktemp -d)" python -c "
           from fastapi.testclient import TestClient
           import main
           r = TestClient(main.app).get('/api/health/live')
@@ -59,29 +85,14 @@ jobs:
           print('health:', r.json())
           "
 
-      # Boot through startup.sh the way App Service does: plain interpreter with the build's
-      # site-packages on PYTHONPATH (ahead of the stdlib). Catches shadowed-stdlib crashes
-      # (e.g. fyers-apiv3's obsolete `asyncio` dependency) that the venv test above can't.
-      - name: Smoke test - boot via startup.sh like App Service
-        run: |
-          SP=$(echo "$PWD"/antenv/lib/python3.*/site-packages)
-          PYTHONPATH="$SP" APP_PATH="$PWD" PYTHON=python DATA_DIR="$(mktemp -d)" PORT=8000 \
-            bash startup.sh > boot.log 2>&1 &
-          for i in $(seq 1 90); do
-            if curl -sf localhost:8000/api/health/live; then echo; cat boot.log | grep '^startup:'; exit 0; fi
-            sleep 1
-          done
-          echo "::error::App did not start via startup.sh"; cat boot.log; exit 1
-
-      # Oryx (SCM_DO_BUILD_DURING_DEPLOYMENT=true) installs dependencies on the platform at
-      # deploy time, so the local virtual environment is excluded from the artifact.
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v4
         with:
           name: python-app
+          include-hidden-files: true   # .python_packages and .deployment start with a dot
           path: |
             .
-            !antenv/
+            !.git/
             !data_files/
             !boot.log
 
