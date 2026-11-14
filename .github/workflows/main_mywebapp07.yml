@@ -142,6 +142,10 @@ jobs:
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
+          # Delete files not in this package. A previous Oryx build left output.tar.zst +
+          # oryx-manifest.toml in wwwroot; while they exist, App Service unpacks and runs
+          # that stale build instead of the deployed code.
+          clean: true
 
       - name: 'Deploy to Azure Web App (publish profile)'
         if: env.HAS_OIDC != 'true'
@@ -151,3 +155,7 @@ jobs:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           slot-name: 'Production'
           publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_4679289243E24ECEB13F4A937F2100C3 }}
+          # Delete files not in this package. A previous Oryx build left output.tar.zst +
+          # oryx-manifest.toml in wwwroot; while they exist, App Service unpacks and runs
+          # that stale build instead of the deployed code.
+          clean: true
